@@ -1,0 +1,43 @@
+{
+  "name": "TestApp",
+  "description": "(description)",
+  "version": "6.6.8",
+  "publisher": "PUBLISHER",
+
+  "supportedCultures": [
+    "nl-NL"
+  ],
+  "supportedAffiliates": [
+    "CheapticketsNL"
+  ],
+
+  "ui": {
+    "events": {
+      "dispatched": [
+      ],
+      "listened": [
+      ]
+    },
+    "permissions": {
+      "required": [
+      ],
+      "issued": [
+      ]
+    }
+  },
+
+  "api": {
+    "serviceUrls": {
+      "search": "http://someapi.com/search/"
+    },
+    "actionUrls": {
+      "status": "http://someapi.com/status/"
+    },
+    "permissions": {
+      "required": [
+      ],
+      "issued": [
+      ]
+    }
+  }
+}
