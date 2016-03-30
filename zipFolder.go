@@ -3,8 +3,8 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-    "io"
-    "os"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -18,19 +18,19 @@ func zipFolder(source, target string) error {
 
 	archive := zip.NewWriter(zipfile)
 	defer archive.Close()
-	
+
 	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		path = strings.Replace(path, "\\", "/", -1)
 		relPath := strings.TrimPrefix(path, source)
-		
-		if (relPath == "") {
+
+		if relPath == "" {
 			return nil
 		}
-		
+
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
 			return err
@@ -60,9 +60,9 @@ func zipFolder(source, target string) error {
 			return err
 		}
 		defer file.Close()
-		
+
 		_, err = io.Copy(writer, file)
-		
+
 		return err
 	})
 
