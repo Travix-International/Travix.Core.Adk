@@ -1,8 +1,9 @@
 package main
 
 import (
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
