@@ -3,17 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // PublishCommand used for publishing Apps
 type PublishCommand struct {
 	appPath     string // path to the App folder
-	enviromnent string // environment (default: dev)
+	environment string // environment (default: dev)
 }
 
 const publishTemplateURI = "%s/files/%s"
@@ -29,12 +30,12 @@ func configurePublishCommand(app *kingpin.Application) {
 		ExistingDirVar(&cmd.appPath)
 	appCmd.Arg("environment", "Target environment (dev/acc/prod, default dev)").
 		Default("dev").
-		EnumVar(&cmd.enviromnent, "dev", "acc", "prod")
+		EnumVar(&cmd.environment, "dev", "acc", "prod")
 }
 
 func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
-	environment := cmd.enviromnent
+	environment := cmd.environment
 	rootURI := catalogURIs[targetEnv]
 
 	if appPath == "" {
