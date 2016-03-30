@@ -23,7 +23,6 @@ func zipFolder(source, target string) error {
 		if err != nil {
 			return err
 		}
-
 		
 		path = strings.Replace(path, "\\", "/", -1)
 		relPath := strings.TrimPrefix(path, source)
@@ -50,7 +49,7 @@ func zipFolder(source, target string) error {
 			return err
 		}
 
-		fmt.Println(header.Name)
+		fmt.Printf("\tAdding %s\n", header.Name)
 
 		if info.IsDir() {
 			return nil
@@ -61,7 +60,9 @@ func zipFolder(source, target string) error {
 			return err
 		}
 		defer file.Close()
+		
 		_, err = io.Copy(writer, file)
+		
 		return err
 	})
 
