@@ -2,8 +2,8 @@ package main
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,7 +49,9 @@ func zipFolder(source, target string) error {
 			return err
 		}
 
-		fmt.Printf("\tAdding %s\n", header.Name)
+		if verbose {
+			log.Printf("\tAdding %s\n", header.Name)
+		}
 
 		if info.IsDir() {
 			return nil
