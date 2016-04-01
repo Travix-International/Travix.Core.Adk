@@ -25,11 +25,14 @@ func zipFolder(source, target string) error {
 		}
 
 		path = strings.Replace(path, "\\", "/", -1)
-		relPath := strings.TrimPrefix(path, source)
+		sourcePath := strings.Replace(source, "\\", "/", -1)
+		relPath := strings.TrimPrefix(path, sourcePath)
 
 		if relPath == "" {
 			return nil
 		}
+
+		relPath = strings.TrimLeft(relPath, "/")
 
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
