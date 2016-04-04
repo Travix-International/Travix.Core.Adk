@@ -1,7 +1,7 @@
 {
   "name": "TestApp",
   "description": "(description)",
-  "version": "6.6.8",
+  "version": "6.6.10",
   "publisher": "PUBLISHER",
 
   "supportedCultures": [
@@ -12,6 +12,10 @@
   ],
 
   "ui": {
+	"targetContainers": [
+        "homepage",
+        "checkout2"
+    ],
     "events": {
       "dispatched": [
       ],
