@@ -1,27 +1,18 @@
 {
   "name": "TestApp",
   "description": "(description)",
-  "version": "6.6.10",
+  "version": "6.6.12",
   "publisher": "PUBLISHER",
 
-  "supportedCultures": [
-    "nl-NL"
-  ],
-  "supportedAffiliates": [
-    "CheapticketsNL"
-  ],
-
   "ui": {
-	"targetContainers": [
-        "homepage",
-        "checkout2"
-    ],
-    "events": {
-      "dispatched": [
-      ],
-      "listened": [
-      ]
-    },
+    "widgets": {
+        "widget1": {
+            "targetContainers": ["homepage", "checkoutExtrasInsurances"]
+        },
+        "widget2": {
+            "targetContainers": ["checkoutExtrasInsurances"]
+        }
+    },  
     "permissions": {
       "required": [
       ],

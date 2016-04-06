@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -76,7 +77,7 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = zipFolder(appPath, zapFile)
+	err = zipFolder(appPath, zapFile, includePathInZapFile)
 
 	if err != nil {
 		log.Println("Could not process App folder!")
@@ -132,4 +133,27 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	}
 
 	return nil
+}
+
+func includePathInZapFile(relPath string) bool {
+	path := strings.ToLower(relPath)
+	canInclude := strings.HasPrefix(path, "ui/") &&
+		!strings.Contains(path, "/node_modules/") &&
+		!strings.Contains(path, "/temp/") &&
+		!strings.Contains(path, ".git") &&
+		!strings.HasSuffix(path, ".idea/") &&
+		!strings.HasSuffix(path, ".vscode/") &&
+		!strings.HasSuffix(path, ".md") &&
+		!strings.HasSuffix(path, ".ds_store") &&
+		!strings.HasSuffix(path, "thumbs.db") &&
+		!strings.HasSuffix(path, "desktop.ini")
+
+	if verbose {
+		if canInclude {
+			log.Printf("\tAdding %s\n", relPath)
+		} else {
+			log.Printf("\tSkipping %s\n", relPath)
+		}
+	}
+	return canInclude
 }
