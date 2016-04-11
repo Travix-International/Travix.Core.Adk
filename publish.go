@@ -135,10 +135,11 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	return nil
 }
 
-func includePathInZapFile(relPath string) bool {
+func includePathInZapFile(relPath string, isDir bool) bool {
 	path := strings.ToLower(relPath)
-	canInclude := strings.HasPrefix(path, "ui/") &&
-		!strings.Contains(path, "/node_modules/") &&
+	canInclude := strings.HasPrefix(path, "ui/") && // only dirs starting in ui/
+		(isDir || strings.Count(path, "/") >= 2) && // only allow subdirs in  ui/
+		!strings.Contains(path, "/node_modules/") && // exclude node_modules
 		!strings.Contains(path, "/temp/") &&
 		!strings.Contains(path, ".git") &&
 		!strings.HasSuffix(path, ".idea/") &&
