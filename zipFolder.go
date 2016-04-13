@@ -3,13 +3,12 @@ package main
 import (
 	"archive/zip"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func zipFolder(source, target string) error {
+func zipFolder(source, target string, includePathInZipFn func(string, bool) bool) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -33,6 +32,15 @@ func zipFolder(source, target string) error {
 		}
 
 		relPath = strings.TrimLeft(relPath, "/")
+		isDir := info.IsDir()
+
+		if isDir {
+			relPath += "/"
+		}
+
+		if !includePathInZipFn(relPath, isDir) {
+			return nil
+		}
 
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
@@ -41,19 +49,13 @@ func zipFolder(source, target string) error {
 
 		header.Name = relPath
 
-		if info.IsDir() {
-			header.Name += "/"
-		} else {
+		if !info.IsDir() {
 			header.Method = zip.Deflate
 		}
 
 		writer, err := archive.CreateHeader(header)
 		if err != nil {
 			return err
-		}
-
-		if verbose {
-			log.Printf("\tAdding %s\n", header.Name)
 		}
 
 		if info.IsDir() {
