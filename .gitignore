@@ -176,5 +176,5 @@ $RECYCLE.BIN/
 
 temp
 appix.exe
-bin/appix-linux
 bin/appix-mac
+bin/appix

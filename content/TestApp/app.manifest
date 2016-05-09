@@ -1,16 +1,13 @@
 {
   "name": "TestApp",
   "description": "(description)",
-  "version": "6.6.12",
+  "version": "6.6.20",
   "publisher": "PUBLISHER",
 
   "ui": {
     "widgets": {
-        "widget1": {
-            "targetContainers": ["homepage", "checkoutExtrasInsurances"]
-        },
-        "widget2": {
-            "targetContainers": ["checkoutExtrasInsurances"]
+        "TestWidget": {
+            "targetContainers": ["helloWorld"]
         }
     },  
     "permissions": {

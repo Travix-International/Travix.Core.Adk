@@ -22,7 +22,7 @@ func main() {
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
-		Default("prod").
+		Default("dev").
 		EnumVar(&targetEnv, "local", "dev", "staging", "prod")
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
