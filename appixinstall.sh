@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+set -e
 
 _appixinstall_has() {
     type "$1" > /dev/null 2>&1
@@ -37,7 +39,7 @@ fi
 
 # Downloading to ~/.appix
 mkdir -p ~/.appix
-if [ -s "~/.appix/appix" ]; then
+if [ -s ~/.appix/appix ]; then
     echo "appix is already installed in ~/.appix, trying to update"
 else
     echo "Downloading appix binary to ~/.appix"
