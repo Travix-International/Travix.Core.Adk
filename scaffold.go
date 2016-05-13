@@ -12,7 +12,7 @@ func scaffoldNewApp(appPath string) error {
 	}
 
 	// Write out the development settings
-	log.Print("Scaffolding the development settings...")
+	log.Print("Initializing the development settings...")
 	developmentSettings, err := getDefaultDevelopmentSettings()
 	if err != nil {
 		log.Printf("Failed to generate default development settings")
@@ -23,7 +23,7 @@ func scaffoldNewApp(appPath string) error {
 	}
 	err = writeDevelopmentSettings(appPath, developmentSettings)
 	if err != nil {
-		log.Printf("Failed to set development settings")
+		log.Printf("Failed to store the development settings")
 		return err
 	}
 
