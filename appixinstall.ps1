@@ -33,6 +33,12 @@ Param(
   )
   $oldpath = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\Environment" -Name PATH).path
 
+  #if($oldpath -Match $Path) {
+  if($oldpath.Contains($Path)) {
+    Write-Output "The folder is already in the PATH."
+    return
+  }
+
   if($oldpath.EndsWith(";")) {
     $newpath = "$oldpath$Path"
   }
