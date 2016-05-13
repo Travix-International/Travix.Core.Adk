@@ -19,7 +19,7 @@ func configureInitCommand(app *kingpin.Application) {
 	appCmd := app.Command("init", "Scaffold a new application into the specified folder").
 		Action(cmd.init).
 		Alias("i")
-	appCmd.Arg("appPath", "Path to an emty folder. (default: current folder)").
+	appCmd.Arg("appPath", "Path to an empty folder. (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
 }
