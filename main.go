@@ -28,6 +28,7 @@ func main() {
 		Short('v').
 		BoolVar(&verbose)
 
+	configureInitCommand(app)
 	configurePublishCommand(app)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

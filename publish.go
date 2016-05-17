@@ -147,6 +147,7 @@ func includePathInZapFile(relPath string, isDir bool) bool {
 		!strings.HasSuffix(path, ".md") &&
 		!strings.HasSuffix(path, ".ds_store") &&
 		!strings.HasSuffix(path, "thumbs.db") &&
+		!strings.HasSuffix(path, DevFileName) &&
 		!strings.HasSuffix(path, "desktop.ini")
 
 	if verbose {
