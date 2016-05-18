@@ -16,7 +16,12 @@ type PublishCommand struct {
 	environment string // environment (default: dev)
 }
 
-const publishTemplateURI = "%s/files/%s"
+type publishResponse struct {
+	Messages []string
+	Links    map[string]string
+}
+
+const publishTemplateURI = "%s/files/publish/%s"
 
 func configurePublishCommand(app *kingpin.Application) {
 	cmd := &PublishCommand{}
@@ -84,18 +89,26 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	var responseLines []string
-	err = json.Unmarshal(responseBody, &responseLines)
+	var responseObject publishResponse
+	err = json.Unmarshal(responseBody, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
 		}
-		responseLines[0] = string(responseBody)
+
+		responseObject = publishResponse{}
+		responseObject.Messages = []string{string(responseBody)}
 	}
 
 	log.Printf("App Catalog returned statuscode %v. Response details:\n", response.StatusCode)
-	for _, line := range responseLines {
+	for _, line := range responseObject.Messages {
 		log.Printf("\t%v\n", line)
+	}
+
+	if verbose {
+		for key, val := range responseObject.Links {
+			log.Printf("\tLINK: %s\t\t%s", key, val)
+		}
 	}
 
 	if response.StatusCode == http.StatusOK {
