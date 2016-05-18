@@ -10,7 +10,7 @@ import (
 var (
 	catalogURIs = map[string]string{
 		"local":   "http://localhost:52426",
-		"dev":     "https://appcatalog.dev.travix.com",
+		"dev":     "https://appcatalog.development.travix.com",
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
@@ -29,6 +29,8 @@ func main() {
 		BoolVar(&verbose)
 
 	configureInitCommand(app)
+	configurePushCommand(app)
 	configurePublishCommand(app)
+	
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
