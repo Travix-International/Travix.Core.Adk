@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os/exec"
 	"runtime"
 
@@ -96,10 +95,8 @@ func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string,  e
 		log.Println("Creating the HTTP request failed.")
 		return "", err
 	}
-	
-	proxyURL, err := url.Parse("http://127.0.0.1:8888")
 
-	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
@@ -163,10 +160,8 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 		log.Println("Creating the HTTP request failed.")
 		return "", err
 	}
-	
-	proxyURL, err := url.Parse("http://127.0.0.1:8888")
 
-	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
 		log.Println("Call to the Express frontend failed.")
