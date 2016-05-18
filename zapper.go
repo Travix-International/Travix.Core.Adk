@@ -8,19 +8,16 @@ import (
 	"path/filepath"
 )
 
-func prepareAppUpload(configAppPath string, configEnvironment string) (appPath string, appName string, environment string, manifestPath string, err error) {
+func prepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
 	if configAppPath == "" {
 		configAppPath = "."
-	}
-	if configEnvironment == "" {
-		configEnvironment = "dev"
 	}
 
 	appPath, err = filepath.Abs(configAppPath)
 
 	if err != nil {
 		log.Printf("Invalid App path: %s\n", appPath)
-		return "", "", "", "", err
+		return "", "", "", err
 	}
 
 	appName = filepath.Base(appPath)
@@ -28,10 +25,10 @@ func prepareAppUpload(configAppPath string, configEnvironment string) (appPath s
 	
 	if _, err = os.Stat(manifestPath); os.IsNotExist(err) {
 		log.Printf("App manifest not found: %s\n", manifestPath)
-		return "", "", "", "", err
+		return "", "", "", err
 	}
 	
-	return appPath, appName, environment, manifestPath, nil
+	return appPath, appName, manifestPath, nil
 }
 
 func createZapPackage(appPath string) (string, error) {

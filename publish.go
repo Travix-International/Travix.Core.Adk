@@ -33,10 +33,13 @@ func configurePublishCommand(app *kingpin.Application) {
 }
 
 func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
-	appPath := cmd.appPath
 	environment := cmd.environment
 	
-	appPath, appName, environment, appManifestFile, err := prepareAppUpload(cmd.appPath, cmd.environment)
+	if environment == "" {
+		environment = "dev"
+	}
+	
+	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
 	
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
@@ -62,7 +65,7 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	if verbose {
 		log.Println("Posting files to App Catalog: " + publishURI)
 	}
-	request, err := createMultiFileUploadRequest(publishURI, files)
+	request, err := createMultiFileUploadRequest(publishURI, files, nil)
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return err
