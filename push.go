@@ -14,7 +14,7 @@ import (
 
 // PushCommand used for pushing an app during app development
 type PushCommand struct {
-	appPath     string // path to the App folder
+	appPath string // path to the App folder
 }
 
 const pushTemplateURI = "%s/files/push/%s?sessionid=%s"
@@ -30,55 +30,55 @@ func configurePushCommand(app *kingpin.Application) {
 
 func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
-	
+
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
-	
+
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
 		return err
 	}
-	
-	zapFile, err:= createZapPackage(appPath)
+
+	zapFile, err := createZapPackage(appPath)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
-	
+
 	sessionID, err := getSessionID(appPath)
-	
+
 	if err != nil {
 		log.Println("Could not get the session id.")
 		return err
 	}
-	
+
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
 	rootURI := catalogURIs[targetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
-	
+
 	uploadURI, err := pushToCatalog(pushURI, appManifestFile)
-	
+
 	if err != nil {
 		log.Println("Error during pushing the manifest to the App Catalog.")
 		return err
 	}
 	
 	frontendURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID)
-	
+
 	if err != nil {
 		log.Println("Error. during uploading package to te frontend")
 		return err
 	}
-	
+
 	log.Printf("App successfully pushed. The frontend for this development session is at " + frontendURI)
-	
+
 	openWebsite(frontendURI)
-	
+
 	return nil
 }
 
-func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string,  err error) {
+func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string, err error) {
 	// To the App Catalog we have to POST the manifest in a multipart HTTP form.
 	// When doing the push, it'll only contain a single file, the manifest.
 	files := map[string]string{
@@ -88,9 +88,9 @@ func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string,  e
 	if verbose {
 		log.Println("Posting the app manifest to the App Catalog overlay: " + pushURI)
 	}
-	
+
 	request, err := createMultiFileUploadRequest(pushURI, files, nil)
-	
+
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
 		return "", err
@@ -104,29 +104,29 @@ func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string,  e
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)
-	
+
 	if err != nil {
 		log.Println("Error reading response from App Catalog.")
 		return "", err
 	}
 
 	type PushResponse struct {
-		Links map[string]string `json:"links"`
-		Messages []string `json:"messages"`
+		Links    map[string]string `json:"links"`
+		Messages []string          `json:"messages"`
 	}
-	
+
 	var responseObject PushResponse
 	err = json.Unmarshal(responseBody, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
 		}
-		
+
 		return "", err
 	}
 
 	log.Printf("App Catalog returned status code %v. Response details:\n", response.StatusCode)
-		
+
 	for _, line := range responseObject.Messages {
 		log.Printf("\t%v\n", line)
 	}
@@ -144,18 +144,18 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 	files := map[string]string{
 		"file": zapFile,
 	}
-	
+
 	params := map[string]string{
-		"name": appName,
+		"name":      appName,
 		"sessionid": sessionID,
 	}
 
 	if verbose {
 		log.Println("Uploading the app to the Express frontend: " + uploadURI)
 	}
-	
+
 	request, err := createMultiFileUploadRequest(uploadURI, files, params)
-	
+
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
 		return "", err
@@ -180,7 +180,7 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 		if verbose {
 			log.Println(err)
 		}
-		
+
 		return "", err
 	}
 
@@ -194,33 +194,33 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 
 	// The frontend returns a link which can be directly opened in a browser in the following format:
 	// {
-    //   "links": {
-    //     "frontend": "https://fireball-dev.travix.com/?sessionId=123`"
-    //   }
-    // }
+	//   "links": {
+	//     "frontend": "https://fireball-dev.travix.com/?sessionId=123`"
+	//   }
+	// }
 	return responseObject["links"]["frontend"], nil
 }
 
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
 func getSessionID(appPath string) (string, error) {
 	settings, err := readDevelopmentSettings(appPath)
-	
+
 	if err != nil {
 		settings, err = getDefaultDevelopmentSettings()
-		
+
 		if err != nil {
 			log.Println("Couldn't create new development settings.")
 			return "", err
 		}
-		
+
 		err = writeDevelopmentSettings(appPath, settings)
-		
+
 		if err != nil {
 			log.Println("Could not save new development settings file.")
 			return "", err
 		}
 	}
-	
+
 	return settings.SessionID, nil
 }
 
@@ -236,6 +236,6 @@ func openWebsite(url string) error {
 	default:
 		err = fmt.Errorf("unsupported platform")
 	}
-	
+
 	return err
 }
