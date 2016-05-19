@@ -17,7 +17,7 @@ func createMultiFileUploadRequest(uri string, files map[string]string, rawFields
 	
 	if rawFields != nil {
 		// We add the raw form parameters to the request.	
-		for key, value := range files {
+		for key, value := range rawFields {
 			field, err := writer.CreateFormField(key)
 			
 			if err != nil {
