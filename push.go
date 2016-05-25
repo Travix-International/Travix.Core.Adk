@@ -146,8 +146,7 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 	}
 
 	params := map[string]string{
-		"name":      appName,
-		"sessionid": sessionID,
+		"name": appName,
 	}
 
 	if verbose {
