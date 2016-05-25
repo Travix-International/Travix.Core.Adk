@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"errors"
+	"encoding/json"
 )
 
 func prepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
@@ -19,14 +21,40 @@ func prepareAppUpload(configAppPath string) (appPath string, appName string, man
 		log.Printf("Invalid App path: %s\n", appPath)
 		return "", "", "", err
 	}
-
-	appName = filepath.Base(appPath)
+	
 	manifestPath = appPath + "/app.manifest"
 	
 	if _, err = os.Stat(manifestPath); os.IsNotExist(err) {
 		log.Printf("App manifest not found: %s\n", manifestPath)
 		return "", "", "", err
 	}
+	
+	type AppManifestName struct {
+		Name string `json:"name"`
+	}
+
+	var manifestObject AppManifestName
+	
+	manifestData, err := ioutil.ReadFile(manifestPath)
+	
+	if err != nil {
+		log.Println("Couldn't read the app.manifest")
+		return "", "", "", err
+	}
+	
+	err = json.Unmarshal(manifestData, &manifestObject)
+	
+	if err != nil {
+		log.Println("Couldn't parse the app.manifest")
+		return "", "", "", err
+	}
+	
+	if manifestObject.Name == "" {
+		log.Println("The name is missing from the app manifest")
+		return "", "", "", errors.New("The name is missing from the app manifest")
+	}
+	
+	appName = manifestObject.Name
 	
 	return appPath, appName, manifestPath, nil
 }
