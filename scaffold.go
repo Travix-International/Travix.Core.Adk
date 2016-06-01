@@ -39,7 +39,6 @@ func scaffoldNewApp(appPath string) error {
 }
 
 func applyTemplate(appPath string) error {
-	// This is just for the time being, we should upload this file to the Travix Github account.
 	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/HelloWorldTemplate.zip"
 
 	tempFolder, err := ioutil.TempDir("", "appix")
