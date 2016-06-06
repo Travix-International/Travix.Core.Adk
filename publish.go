@@ -6,9 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -19,13 +16,17 @@ type PublishCommand struct {
 	environment string // environment (default: dev)
 }
 
-const publishTemplateURI = "%s/files/%s"
+type publishResponse struct {
+	Messages []string
+	Links    map[string]string
+}
+
+const publishTemplateURI = "%s/files/publish/%s"
 
 func configurePublishCommand(app *kingpin.Application) {
 	cmd := &PublishCommand{}
 	appCmd := app.Command("publish", "Publish the App in the specified folder to the specified enviromnent.").
 		Action(cmd.publish).
-		Alias("p").
 		Alias("pub").
 		Alias("publ")
 	appCmd.Arg("appPath", "path to the App folder (default: current folder)").
@@ -37,53 +38,29 @@ func configurePublishCommand(app *kingpin.Application) {
 }
 
 func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
-	appPath := cmd.appPath
 	environment := cmd.environment
-	rootURI := catalogURIs[targetEnv]
-
-	if appPath == "" {
-		appPath = "."
-	}
+	
 	if environment == "" {
 		environment = "dev"
 	}
-
-	appPath, err := filepath.Abs(appPath)
+	
+	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
+	
+	if err != nil {
+		log.Println("Could not prepare the app folder for uploading")
+		return err
+	}
+	
+	zapFile, err:= createZapPackage(appPath)
 
 	if err != nil {
-		log.Printf("Invalid App path: %s\n", appPath)
+		log.Println("Could not create zap package!")
 		return err
 	}
-
-	appName := filepath.Base(appPath)
-	appManifestFile := appPath + "/app.manifest"
-	tempFolder, err := ioutil.TempDir("", "appix")
-
-	if err != nil {
-		log.Println("Could not create temp folder!")
-		return err
-	}
-
-	if _, err = os.Stat(appManifestFile); os.IsNotExist(err) {
-		log.Printf("App manifest not found: %s\n", appManifestFile)
-		return err
-	}
-
+	
 	log.Printf("Run publish for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
-	zapFile := tempFolder + "/app.zap"
-
-	if verbose {
-		log.Println("Creating ZAP file: " + zapFile)
-	}
-
-	err = zipFolder(appPath, zapFile, includePathInZapFile)
-
-	if err != nil {
-		log.Println("Could not process App folder!")
-		return err
-	}
-
+	rootURI := catalogURIs[targetEnv]
 	publishURI := fmt.Sprintf(publishTemplateURI, rootURI, appName)
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -93,7 +70,7 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	if verbose {
 		log.Println("Posting files to App Catalog: " + publishURI)
 	}
-	request, err := createMultiFileUploadRequest(publishURI, files)
+	request, err := createMultiFileUploadRequest(publishURI, files, nil)
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return err
@@ -112,18 +89,26 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	var responseLines []string
-	err = json.Unmarshal(responseBody, &responseLines)
+	var responseObject publishResponse
+	err = json.Unmarshal(responseBody, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
 		}
-		responseLines[0] = string(responseBody)
+
+		responseObject = publishResponse{}
+		responseObject.Messages = []string{string(responseBody)}
 	}
 
 	log.Printf("App Catalog returned statuscode %v. Response details:\n", response.StatusCode)
-	for _, line := range responseLines {
+	for _, line := range responseObject.Messages {
 		log.Printf("\t%v\n", line)
+	}
+
+	if verbose {
+		for key, val := range responseObject.Links {
+			log.Printf("\tLINK: %s\t\t%s", key, val)
+		}
 	}
 
 	if response.StatusCode == http.StatusOK {
@@ -133,29 +118,4 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	}
 
 	return nil
-}
-
-func includePathInZapFile(relPath string, isDir bool) bool {
-	path := strings.ToLower(relPath)
-	canInclude := strings.HasPrefix(path, "ui/") && // only dirs starting in ui/
-		(isDir || strings.Count(path, "/") >= 2) && // only allow subdirs in  ui/
-		!strings.Contains(path, "/node_modules/") && // exclude node_modules
-		!strings.Contains(path, "/temp/") &&
-		!strings.Contains(path, ".git") &&
-		!strings.HasSuffix(path, ".idea/") &&
-		!strings.HasSuffix(path, ".vscode/") &&
-		!strings.HasSuffix(path, ".md") &&
-		!strings.HasSuffix(path, ".ds_store") &&
-		!strings.HasSuffix(path, "thumbs.db") &&
-		!strings.HasSuffix(path, DevFileName) &&
-		!strings.HasSuffix(path, "desktop.ini")
-
-	if verbose {
-		if canInclude {
-			log.Printf("\tAdding %s\n", relPath)
-		} else {
-			log.Printf("\tSkipping %s\n", relPath)
-		}
-	}
-	return canInclude
 }

@@ -10,28 +10,46 @@ import (
 
 // Creates a new file upload http request with optional extra params
 // Source: https://matt.aimonetti.net/posts/2013/07/01/golang-multipart-file-upload-example/
-func createMultiFileUploadRequest(uri string, files map[string]string) (*http.Request, error) {
+func createMultiFileUploadRequest(uri string, files map[string]string, rawFields map[string]string) (*http.Request, error) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
-	for key, path := range files {
-		file, err := os.Open(path)
-		if err != nil {
-			return nil, err
+	
+	if rawFields != nil {
+		// We add the raw form parameters to the request.	
+		for key, value := range rawFields {
+			field, err := writer.CreateFormField(key)
+			
+			if err != nil {
+				return nil, err; 
+			}
+			
+			if _, err := field.Write([]byte(value)); err != nil {
+				return nil, err
+			}
 		}
-		defer file.Close()
+	}
 
-		part, err := writer.CreateFormFile(key, path)
+	if files != nil {
+		// We add the posted files to the request.
+		for key, path := range files {
+			file, err := os.Open(path)
+			if err != nil {
+				return nil, err
+			}
+			defer file.Close()
 
-		if err != nil {
-			return nil, err
-		}
+			part, err := writer.CreateFormFile(key, path)
 
-		_, err = io.Copy(part, file)
+			if err != nil {
+				return nil, err
+			}
 
-		if err != nil {
-			return nil, err
+			_, err = io.Copy(part, file)
+
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

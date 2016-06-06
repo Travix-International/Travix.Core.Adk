@@ -75,3 +75,46 @@ func zipFolder(source, target string, includePathInZipFn func(string, bool) bool
 
 	return err
 }
+
+func extractZip(src, dest string) error {
+	reader, err := zip.OpenReader(src)
+
+	if err != nil {
+		return err
+	}
+
+	defer reader.Close()
+
+	for _, f := range reader.Reader.File {
+
+		zipped, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		defer zipped.Close()
+
+		path := filepath.Join(dest, f.Name)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, 0777)
+		} else {
+			dirPath := filepath.Dir(path)
+			os.MkdirAll(dirPath, 0777)
+
+			writer, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, f.Mode())
+
+			if err != nil {
+				return err
+			}
+
+			defer writer.Close()
+
+			if _, err = io.Copy(writer, zipped); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
