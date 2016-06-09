@@ -39,25 +39,25 @@ func configurePublishCommand(app *kingpin.Application) {
 
 func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	environment := cmd.environment
-	
+
 	if environment == "" {
 		environment = "dev"
 	}
-	
+
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
-	
+
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
 		return err
 	}
-	
-	zapFile, err:= createZapPackage(appPath)
+
+	zapFile, err := createZapPackage(appPath)
 
 	if err != nil {
 		log.Println("Could not create zap package!")
 		return err
 	}
-	
+
 	log.Printf("Run publish for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
 	rootURI := catalogURIs[targetEnv]

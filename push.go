@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -17,7 +18,21 @@ type PushCommand struct {
 	appPath string // path to the App folder
 }
 
-const pushTemplateURI = "%s/files/push/%s?sessionid=%s"
+type PushPollResponse struct {
+	Message string
+	Meta    struct {
+		Status string
+	}
+	Links struct {
+		Preview string
+	}
+}
+
+const (
+	pushTemplateURI    = "%s/files/push/%s?sessionid=%s"
+	pollInterval       = 5 * time.Second // how often to poll status URL
+	pollFinishedStatus = "FINISHED"
+)
 
 func configurePushCommand(app *kingpin.Application) {
 	cmd := &PushCommand{}
@@ -63,17 +78,49 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		log.Println("Error during pushing the manifest to the App Catalog.")
 		return err
 	}
-	
-	frontendURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID)
+
+	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID)
 
 	if err != nil {
-		log.Println("Error. during uploading package to te frontend")
+		log.Println("Error. during uploading package to the frontend")
 		return err
 	}
 
-	log.Printf("App successfully pushed. The frontend for this development session is at " + frontendURI)
+	finished := false
+	var statusResponse PushPollResponse
 
-	openWebsite(frontendURI)
+	for !finished {
+		resp, err := http.Get(pollURI)
+
+		if err != nil {
+			log.Println("Error. during polling push to the frontend")
+			return err
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&statusResponse)
+		resp.Body.Close()
+
+		if err != nil {
+			log.Println("Error. during parsing poll status result")
+			bodyData, _ := ioutil.ReadAll(resp.Body)
+			if bodyData != nil {
+				log.Println(bodyData)
+			}
+			return err
+		}
+
+		log.Printf("Pushing to the website to the development environment, status: [%s]", statusResponse.Meta.Status)
+
+		if statusResponse.Meta.Status == pollFinishedStatus {
+			finished = true
+			break
+		}
+
+		time.Sleep(pollInterval)
+	}
+
+	log.Printf("App successfully pushed. The frontend for this development session is at ", statusResponse.Links.Preview)
+	openWebsite(statusResponse.Links.Preview)
 
 	return nil
 }
