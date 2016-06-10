@@ -30,6 +30,7 @@ type PushPollResponse struct {
 
 const (
 	pushTemplateURI    = "%s/files/push/%s?sessionid=%s"
+	pollClientTimeout  = 5 * time.Second
 	pollInterval       = 5 * time.Second // how often to poll status URL
 	pollFinishedStatus = "FINISHED"
 )
@@ -88,10 +89,11 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 
 	finished := false
 	var statusResponse PushPollResponse
+	timeout := time.Duration(pollClientTimeout)
+	client := http.Client{Timeout: timeout}
 
 	for !finished {
-		resp, err := http.Get(pollURI)
-
+		resp, err := client.Get(pollURI)
 		if err != nil {
 			log.Println("Error. during polling push to the frontend")
 			return err
