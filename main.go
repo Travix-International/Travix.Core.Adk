@@ -31,6 +31,6 @@ func main() {
 	configureInitCommand(app)
 	configurePushCommand(app)
 	configurePublishCommand(app)
-	
+
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

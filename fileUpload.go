@@ -14,16 +14,16 @@ func createMultiFileUploadRequest(uri string, files map[string]string, rawFields
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	
+
 	if rawFields != nil {
-		// We add the raw form parameters to the request.	
+		// We add the raw form parameters to the request.
 		for key, value := range rawFields {
 			field, err := writer.CreateFormField(key)
-			
+
 			if err != nil {
-				return nil, err; 
+				return nil, err
 			}
-			
+
 			if _, err := field.Write([]byte(value)); err != nil {
 				return nil, err
 			}
