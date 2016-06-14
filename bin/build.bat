@@ -2,11 +2,10 @@
 pushd %~dp0%
 cd ..
 
-echo "Retrieving/updating vendor packages..."
-git subtree pull --prefix vendor/gopkg.in/alecthomas/kingpin.v2 https://gopkg.in/alecthomas/kingpin.v2.git master --squash
-git subtree pull --prefix vendor/github.com/alecthomas/template https://github.com/alecthomas/template.git master --squash
-git subtree pull --prefix vendor/github.com/alecthomas/units https://github.com/alecthomas/units.git master --squash
-git subtree pull --prefix vendor/github.com/nu7hatch/gouuid https://github.com/nu7hatch/gouuid.git master --squash
+echo "Retrieving/updating vendor packages using GVT..."
+
+gvt update gopkg.in/alecthomas/kingpin.v2 || true
+gvt update github.com/nu7hatch/gouuid || true
 
 set GOARCH=amd64
 set GOOS=linux
@@ -20,6 +19,8 @@ go build -o bin\appix-mac -i .
 set GOOS=windows
 echo "Building Windows binary..."
 go build -o bin\appix.exe -i .
+
+rem Since this is a .bat file, it's safe to assume this is run in Windows
 
 echo "Done!"
 popd
