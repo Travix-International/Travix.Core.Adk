@@ -2,11 +2,10 @@
 
 set -euf -o pipefail
 
-echo "Retrieving/updating vendor packages..."
-git subtree pull --prefix vendor/gopkg.in/alecthomas/kingpin.v2 https://gopkg.in/alecthomas/kingpin.v2.git master || true
-git subtree pull --prefix vendor/github.com/alecthomas/template https://github.com/alecthomas/template.git master || true
-git subtree pull --prefix vendor/github.com/alecthomas/units https://github.com/alecthomas/units.git master || true
-git subtree pull --prefix vendor/github.com/nu7hatch/gouuid https://github.com/nu7hatch/gouuid.git master || true
+echo "Retrieving/updating vendor packages using GVT..."
+
+gvt update gopkg.in/alecthomas/kingpin.v2 || true
+gvt update github.com/nu7hatch/gouuid || true
 
 set GOARCH=amd64
 set GOOS=windows
@@ -21,6 +20,16 @@ set GOOS=linux
 echo "Building Linux binary..."
 go build -o bin/appix-linux -i . 
 
-rm bin/appix && cp bin/appix-linux bin/appix
+echo "Ensuring correct binary is available as 'appix'..."
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac OSX
+    rm bin/appix && cp bin/appix-mac bin/appix
+elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys"|| "$OSTYPE" == "win32" ]]; then
+    # Do nothing (Windows .exe is already named appropriately)
+    echo "bin/appix.exe"
+else
+    rm "bin/appix" && cp bin/appix-linux "bin/appix"
+fi
 
 echo "Done!"
