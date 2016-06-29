@@ -27,20 +27,20 @@ if ! _appixinstall_has "curl"; then
 fi
 
 # We have a different binary for Linux and Mac
-APPIX_BIN_NAME="appix-linux"
+APPIX_BIN_NAME="linux/appix"
 
 if [ "$(uname)" = "Darwin" ]; then
-    APPIX_BIN_NAME="appix-mac"
+    APPIX_BIN_NAME="mac/appix"
 fi
 
 if [ -z "$APPIX_BIN_URL" ]; then
     if [ -z "$APPIX_VERSION" ]; then
         # Get the latest version
-        APPIX_BIN_URL="https://raw.githubusercontent.com/markvincze/jil-playground/master/$APPIX_BIN_NAME"
+        APPIX_BIN_URL="https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/$APPIX_BIN_NAME"
     else
         # Get specific version
         # TODO: the file naming scheme needs to be finalized once we figure out how we build and publish the binaries
-        APPIX_BIN_URL="https://raw.githubusercontent.com/markvincze/jil-playground/master/$APPIX_BIN_NAME-$APPIX_VERSION"
+        APPIX_BIN_URL="https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/$APPIX_BIN_NAME-$APPIX_VERSION"
     fi
 fi
 

@@ -57,12 +57,12 @@ Param(
 
 Write-Output "Starting the Appix ADK installation"
 
-$url = "https://raw.githubusercontent.com/markvincze/jil-playground/master/appix-windows.exe"
+$url = "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/windows/appix.exe"
 
 $appixVersion = $env:appixVersion
 if (![string]::IsNullOrEmpty($appixVersion)){
   # TODO: the file naming scheme needs to be finalized once we figure out how we build and publish the binaries
-  $url = "https://raw.githubusercontent.com/markvincze/jil-playground/master/appix-windows-$appixVersion.exe"
+  $url = "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/windows/appix-$appixVersion.exe"
 }
 
 # We install into ~/.appix
