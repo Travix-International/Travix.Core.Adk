@@ -39,7 +39,7 @@ func scaffoldNewApp(appPath string) error {
 }
 
 func applyTemplate(appPath string) error {
-	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/HelloWorldTemplate.zip"
+	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/PocWidgetTemplate.zip"
 
 	tempFolder, err := ioutil.TempDir("", "appix")
 	if err != nil {
@@ -78,15 +78,23 @@ func applyTemplate(appPath string) error {
 	appName := filepath.Base(appPath)
 
 	// This is just a temporary, proof of concept implementation, we'll need a proper solution for scaffolding and templating.
-	if err = replaceInFile(filepath.Join(appPath, "app.manifest"), "{APP_NAME}", appName); err != nil {
+	if err = replaceInFile(filepath.Join(appPath, "webpack.config.js"), "{APP_NAME}", appName); err != nil {
 		return err
 	}
 
-	if err = replaceInFile(filepath.Join(appPath, "ui/helloWorldWidget/src/component.js"), "{APP_NAME}", appName); err != nil {
+	if err = replaceInFile(filepath.Join(appPath, "package.json"), "{APP_NAME}", appName); err != nil {
 		return err
 	}
 
-	if err = replaceInFile(filepath.Join(appPath, "ui/helloWorldWidget/src/index.js"), "{APP_NAME}", appName); err != nil {
+	if err = replaceInFile(filepath.Join(appPath, "index.js"), "{APP_NAME}", appName); err != nil {
+		return err
+	}
+
+	if err = replaceInFile(filepath.Join(appPath, "app/index.js"), "{APP_NAME}", appName); err != nil {
+		return err
+	}
+
+	if err = replaceInFile(filepath.Join(appPath, "components/Root.js"), "{APP_NAME}", appName); err != nil {
 		return err
 	}
 

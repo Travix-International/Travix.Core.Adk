@@ -8,6 +8,13 @@ gvt update gopkg.in/alecthomas/kingpin.v2 || true
 gvt update github.com/nu7hatch/gouuid || true
 
 set GOARCH=amd64
+set GOOS=darwin
+echo "Building Mac binary..."
+go build -o bin/appix-mac -i .
+
+exit
+
+set GOARCH=amd64
 set GOOS=windows
 echo "Building Windows binary..."
 go build -o bin/appix.exe -i .
