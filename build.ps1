@@ -1,7 +1,4 @@
-Write-Output "Retrieving/updating vendor packages using GVT..."
-
-gvt update gopkg.in/alecthomas/kingpin.v2
-gvt update github.com/nu7hatch/gouuid
+Write-Output "Building the appix binaries..."
 
 $env:GOARCH="amd64"
 $env:GOOS="linux"
