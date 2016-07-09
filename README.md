@@ -1,4 +1,7 @@
 # Travix Fireball ADK 
+
+[![Build status](https://ci.appveyor.com/api/projects/status/7y64b9xayd3r51xe?svg=true)](https://ci.appveyor.com/project/markvincze/travix-core-adk)
+
 App Developer Kit for the Travix Fireball infrastructure. The ADK consists of `appix`, a CLI tool to publish Apps to the App Catalog. 
 
 ## Installation
@@ -35,3 +38,7 @@ curl -sSL https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk
 ## Getting started
 
 After installation, the ADK can be run by typing `appix` in the terminal. Run `appix --help` to view the available commands and usage.
+
+## License
+
+MIT @ [Travix International](http://travix.com)
