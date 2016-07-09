@@ -45,7 +45,7 @@ if [ -z "$APPIX_BIN_URL" ]; then
         APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$LATEST_VERISION/$APPIX_BIN_NAME"
     else
         # Get specific version
-        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$APPIX_VERSION/$APPIX_BIN_NAME"
+        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/appix-$APPIX_VERSION/$APPIX_BIN_NAME"
     fi
 fi
 

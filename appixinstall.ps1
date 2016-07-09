@@ -69,7 +69,7 @@ if ([string]::IsNullOrEmpty($appixVersion)){
 }
 else {
   # The version was explicitly specified
-  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$appixVersion/appix.exe"
+  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/appix-$appixVersion/appix.exe"
 }
 
 # We install into ~/.appix
