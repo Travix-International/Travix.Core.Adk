@@ -27,20 +27,25 @@ if ! _appixinstall_has "curl"; then
 fi
 
 # We have a different binary for Linux and Mac
-APPIX_BIN_NAME="linux/appix"
+APPIX_BIN_NAME="appix-linux"
 
 if [ "$(uname)" = "Darwin" ]; then
-    APPIX_BIN_NAME="mac/appix"
+    APPIX_BIN_NAME="appix-mac"
 fi
 
 if [ -z "$APPIX_BIN_URL" ]; then
     if [ -z "$APPIX_VERSION" ]; then
         # Get the latest version
-        APPIX_BIN_URL="https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/$APPIX_BIN_NAME"
+        # Determine the latest version
+        RELEASES=$(curl -L -s -H 'Accept: application/json' https://github.com/Travix-International/Travix.Core.Adk/releases/latest)
+
+        # The releases are returned in the format {"id":3622206,"tag_name":"hello-1.0.0.11"}, we have to extract the tag_name.
+        LATEST_VERISION=$(echo $RELEASES | sed -e 's/.*"tag_name":"\(.*\)".*/\1/')
+
+        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$LATEST_VERISION/$APPIX_BIN_NAME"
     else
         # Get specific version
-        # TODO: the file naming scheme needs to be finalized once we figure out how we build and publish the binaries
-        APPIX_BIN_URL="https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/$APPIX_BIN_NAME-$APPIX_VERSION"
+        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$APPIX_VERSION/$APPIX_BIN_NAME"
     fi
 fi
 
@@ -54,7 +59,7 @@ fi
 
 echo "Downloading the Appix ADK from '$APPIX_BIN_URL'"
 
-curl --fail -s "$APPIX_BIN_URL" -o ~/.appix/appix || {
+curl --fail -s -L "$APPIX_BIN_URL" -o ~/.appix/appix || {
     echo >&2 "Failed to download '$APPIX_BIN_URL'."
     exit 1
 }
