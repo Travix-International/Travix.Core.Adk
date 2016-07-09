@@ -38,7 +38,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
-  artifact: binary-linux,binary-mac,binar-windows
+  artifact: binary-linux,binary-mac,binary-windows
   draft: false
   prerelease: false
   on:
