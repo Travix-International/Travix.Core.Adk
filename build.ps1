@@ -1,7 +1,7 @@
 Write-Output "Retrieving/updating vendor packages using GVT..."
 
-gvt update gopkg.in/alecthomas/kingpin.v2 || true
-gvt update github.com/nu7hatch/gouuid || true
+gvt update gopkg.in/alecthomas/kingpin.v2
+gvt update github.com/nu7hatch/gouuid
 
 $env:GOARCH=amd64
 $env:GOOS=linux
