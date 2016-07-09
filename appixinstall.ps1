@@ -57,12 +57,19 @@ Param(
 
 Write-Output "Starting the Appix ADK installation"
 
-$url = "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/windows/appix.exe"
+$appixVersion = $env:APPIX_VERSION
+if ([string]::IsNullOrEmpty($appixVersion)){
+  # Determine the latest version
+  $releases = Invoke-WebRequest https://github.com/Travix-International/Travix.Core.Adk/releases/latest -Headers @{"accept"="application/json"}
 
-$appixVersion = $env:appixVersion
-if (![string]::IsNullOrEmpty($appixVersion)){
-  # TODO: the file naming scheme needs to be finalized once we figure out how we build and publish the binaries
-  $url = "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/appixBinaries/windows/appix-$appixVersion.exe"
+  # The releases are returned in the format {"id":3622206,"tag_name":"hello-1.0.0.11"}, we have to extract the tag_name.
+  $releases.Content -match '.*"tag_name":"(.*)".*' | Out-Null
+  $latestVersion = $Matches[1]
+  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$latestVersion/appix.exe"
+}
+else {
+  # The version was explicitly specified
+  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$appixVersion/appix.exe"
 }
 
 # We install into ~/.appix
