@@ -21,7 +21,7 @@ $env:APPIX_VERSION='1.0.0.5'
 iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk/master/appixinstall.ps1'))
 ```
 
-### Linux
+### Linux and Mac
 
 To install the latest version, run the following command in a terminal.
 
