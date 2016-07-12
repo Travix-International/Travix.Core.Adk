@@ -9,7 +9,7 @@ import (
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
 var (
 	catalogURIs = map[string]string{
-		"local":   "http://localhost:52426",
+		"local":   "http://localhost:5000",
 		"dev":     "https://appcatalog.development.travix.com",
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",

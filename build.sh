@@ -2,11 +2,6 @@
 
 set -euf -o pipefail
 
-echo "Retrieving/updating vendor packages using GVT..."
-
-gvt update gopkg.in/alecthomas/kingpin.v2 || true
-gvt update github.com/nu7hatch/gouuid || true
-
 set GOARCH=amd64
 set GOOS=windows
 echo "Building Windows binary..."
