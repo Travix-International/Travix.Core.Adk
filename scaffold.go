@@ -82,14 +82,6 @@ func applyTemplate(appPath string) error {
 		return err
 	}
 
-	if err = replaceInFile(filepath.Join(appPath, "ui/helloWorldWidget/src/component.js"), "{APP_NAME}", appName); err != nil {
-		return err
-	}
-
-	if err = replaceInFile(filepath.Join(appPath, "ui/helloWorldWidget/src/index.js"), "{APP_NAME}", appName); err != nil {
-		return err
-	}
-
 	return nil
 }
 

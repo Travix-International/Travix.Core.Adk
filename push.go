@@ -18,7 +18,7 @@ type PushCommand struct {
 	appPath string // path to the App folder
 }
 
-type PushPollResponse struct {
+type pushPollResponse struct {
 	Message string
 	Meta    struct {
 		Status string
@@ -92,7 +92,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	}
 
 	finished := false
-	var statusResponse PushPollResponse
+	var statusResponse pushPollResponse
 	timeout := time.Duration(pollClientTimeout)
 	client := http.Client{Timeout: timeout}
 
@@ -125,7 +125,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		time.Sleep(pollInterval)
 	}
 
-	log.Printf("App successfully pushed. The frontend for this development session is at ", statusResponse.Links.Preview)
+	log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 	openWebsite(statusResponse.Links.Preview)
 
 	return nil

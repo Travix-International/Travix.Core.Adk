@@ -85,19 +85,15 @@ func createZapPackage(appPath string) (string, error) {
 
 func includePathInZapFile(relPath string, isDir bool) bool {
 	path := strings.ToLower(relPath)
-	canInclude := strings.HasSuffix(path, "app.manifest") ||
-		(strings.HasPrefix(path, "ui/") && // only the app.manifest or dirs starting in ui
-		(isDir || strings.Count(path, "/") >= 2) && // only allow subdirs in ui
-		!strings.Contains(path, "/node_modules/") && // exclude node_modules
+	canInclude := !strings.Contains(path, "/node_modules/") && // exclude node_modules
 		!strings.Contains(path, "/temp/") &&
 		!strings.Contains(path, ".git") &&
 		!strings.HasSuffix(path, ".idea/") &&
 		!strings.HasSuffix(path, ".vscode/") &&
-		!strings.HasSuffix(path, ".md") &&
 		!strings.HasSuffix(path, ".ds_store") &&
 		!strings.HasSuffix(path, "thumbs.db") &&
 		!strings.HasSuffix(path, DevFileName) &&
-		!strings.HasSuffix(path, "desktop.ini"))
+		!strings.HasSuffix(path, "desktop.ini")
 
 	if verbose {
 		if canInclude {
