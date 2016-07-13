@@ -80,7 +80,11 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		return err
 	}
 
+        log.Println("Frontend upload url:", uploadURI)
+
 	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID)
+
+        log.Println("Frontend upload poll uri:", pollURI);
 
 	if err != nil {
 		log.Println("Error. during uploading package to the frontend")
@@ -240,13 +244,13 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 		return "", fmt.Errorf("Uploading failed, the frontend returned status code %v", response.StatusCode)
 	}
 
-	// The frontend returns a link which can be directly opened in a browser in the following format:
+	// The frontend returns a link which can be used to poll the upload status.
 	// {
 	//   "links": {
-	//     "frontend": "https://fireball-dev.travix.com/?sessionId=123`"
+	//     "progress": "https://fireball-dev.travix.com/upload/progress?sessionId=123`"
 	//   }
 	// }
-	return responseObject["links"]["frontend"], nil
+	return responseObject["links"]["progress"], nil
 }
 
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
