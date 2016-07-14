@@ -141,7 +141,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 	} else {
 		log.Printf("App push failed.")
-	}
+	} 
 
 	openWebsite(statusResponse.Links.Preview)
 
