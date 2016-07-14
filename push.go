@@ -38,6 +38,7 @@ const (
 	pollClientTimeout  = 5 * time.Second
 	pollInterval       = 5 * time.Second // how often to poll status URL
 	pollFinishedStatus = "FINISHED"
+	pollFailedStatus   = "FAILED"
 )
 
 func configurePushCommand(app *kingpin.Application) {
@@ -122,7 +123,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 
 		log.Printf("Pushing to the website to the development environment, status: [%s]", statusResponse.Meta.Status)
 
-		if statusResponse.Meta.Status == pollFinishedStatus {
+		if statusResponse.Meta.Status == pollFinishedStatus || statusResponse.Meta.Status == pollFailedStatus {
 			finished = true
 			break
 		}
@@ -130,16 +131,19 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		time.Sleep(pollInterval)
 	}
 
-	log.Printf("App successfully pushed")
 	log.Printf("Server output for the app bundling:")
 	for _, message := range statusResponse.Meta.Messages {
 		log.Printf("Widget: %s", message.Widget)
 		log.Printf("Output: %s", message.Output)
 	}
 
-	log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+	if statusResponse.Meta.Status == pollFinishedStatus {
+		log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+	} else {
+		log.Printf("App push failed.")
+	}
 
-	// openWebsite(statusResponse.Links.Preview)
+	openWebsite(statusResponse.Links.Preview)
 
 	return nil
 }
