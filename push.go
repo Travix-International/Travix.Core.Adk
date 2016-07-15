@@ -18,10 +18,15 @@ type PushCommand struct {
 	appPath string // path to the App folder
 }
 
+type bundleMessage struct {
+	Widget string
+	Output string
+}
+
 type pushPollResponse struct {
-	Message string
-	Meta    struct {
-		Status string
+	Meta struct {
+		Status   string
+		Messages []bundleMessage
 	}
 	Links struct {
 		Preview string
@@ -33,6 +38,7 @@ const (
 	pollClientTimeout  = 5 * time.Second
 	pollInterval       = 5 * time.Second // how often to poll status URL
 	pollFinishedStatus = "FINISHED"
+	pollFailedStatus   = "FAILED"
 )
 
 func configurePushCommand(app *kingpin.Application) {
@@ -80,11 +86,11 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		return err
 	}
 
-        log.Println("Frontend upload url:", uploadURI)
+	log.Println("Frontend upload url:", uploadURI)
 
 	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID)
 
-        log.Println("Frontend upload poll uri:", pollURI);
+	log.Println("Frontend upload poll uri:", pollURI)
 
 	if err != nil {
 		log.Println("Error. during uploading package to the frontend")
@@ -117,7 +123,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 
 		log.Printf("Pushing to the website to the development environment, status: [%s]", statusResponse.Meta.Status)
 
-		if statusResponse.Meta.Status == pollFinishedStatus {
+		if statusResponse.Meta.Status == pollFinishedStatus || statusResponse.Meta.Status == pollFailedStatus {
 			finished = true
 			break
 		}
@@ -125,7 +131,18 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		time.Sleep(pollInterval)
 	}
 
-	log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+	log.Printf("Server output for the app bundling:")
+	for _, message := range statusResponse.Meta.Messages {
+		log.Printf("Widget: %s", message.Widget)
+		log.Printf("Output: %s", message.Output)
+	}
+
+	if statusResponse.Meta.Status == pollFinishedStatus {
+		log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+	} else {
+		log.Printf("App push failed.")
+	}
+
 	openWebsite(statusResponse.Links.Preview)
 
 	return nil
