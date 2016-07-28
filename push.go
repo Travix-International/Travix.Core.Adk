@@ -61,7 +61,7 @@ func configurePushCommand(app *kingpin.Application) {
 
 func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
-	noPolling := cmd.noPolling
+	pollingEnabled := !cmd.noPolling
 	waitInSeconds := cmd.waitInSeconds
 
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
@@ -108,7 +108,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	if !noPolling {
+	if pollingEnabled {
 		doPolling(pollURI, waitInSeconds)
 	}
 
