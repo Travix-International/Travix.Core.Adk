@@ -15,7 +15,9 @@ import (
 
 // PushCommand used for pushing an app during app development
 type PushCommand struct {
-	appPath string // path to the App folder
+	appPath       string // path to the App folder
+	noPolling     bool   // skip polling flag
+	waitInSeconds int    // polling timeout
 }
 
 type bundleMessage struct {
@@ -37,7 +39,6 @@ const (
 	pushTemplateURI    = "%s/files/push/%s?sessionid=%s"
 	pollClientTimeout  = 5 * time.Second
 	pollInterval       = 5 * time.Second // how often to poll status URL
-	uploadTimeout      = 1 * time.Minute
 	pollFinishedStatus = "FINISHED"
 	pollFailedStatus   = "FAILED"
 )
@@ -49,10 +50,19 @@ func configurePushCommand(app *kingpin.Application) {
 	appCmd.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
+	appCmd.Flag("noPolling", "No Polling").
+		Default("false").
+		BoolVar(&cmd.noPolling)
+	appCmd.Flag("wait", "Wait time in seconds until operation completes").
+		Short('w').
+		Default("180").
+		IntVar(&cmd.waitInSeconds)
 }
 
 func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
+	noPolling := cmd.noPolling
+	waitInSeconds := cmd.waitInSeconds
 
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
 
@@ -98,16 +108,19 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	doPolling(pollURI)
+	if !noPolling {
+		doPolling(pollURI, waitInSeconds)
+	}
 
 	return nil
 }
 
-func doPolling(pollURI string) {
+func doPolling(pollURI string, waitInSeconds int) {
 	quit := make(chan interface{}, 1)
 	defer close(quit)
 
 	progressMonitor := verifyProgress(pollURI, quit)
+	wait := time.Duration(waitInSeconds) * time.Second
 
 	select {
 	case statusResponse, ok := <-progressMonitor:
@@ -130,9 +143,9 @@ func doPolling(pollURI string) {
 		openWebsite(statusResponse.Links.Preview)
 		close(progressMonitor)
 
-	case <-time.After(uploadTimeout):
+	case <-time.After(wait):
 		quit <- true // send a cancel signal to progressMonitor
-		log.Printf("Operation timed out after %s", uploadTimeout)
+		log.Printf("Operation timed out after %s", wait)
 	}
 }
 
