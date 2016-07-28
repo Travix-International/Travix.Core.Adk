@@ -15,7 +15,9 @@ import (
 
 // PushCommand used for pushing an app during app development
 type PushCommand struct {
-	appPath string // path to the App folder
+	appPath       string // path to the App folder
+	noPolling     bool   // skip polling flag
+	waitInSeconds int    // polling timeout
 }
 
 type bundleMessage struct {
@@ -48,10 +50,19 @@ func configurePushCommand(app *kingpin.Application) {
 	appCmd.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
+	appCmd.Flag("noPolling", "No Polling").
+		Default("false").
+		BoolVar(&cmd.noPolling)
+	appCmd.Flag("wait", "Wait time in seconds until operation completes").
+		Short('w').
+		Default("180").
+		IntVar(&cmd.waitInSeconds)
 }
 
 func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
+	pollingEnabled := !cmd.noPolling
+	waitInSeconds := cmd.waitInSeconds
 
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
 
@@ -97,55 +108,93 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	finished := false
-	var statusResponse pushPollResponse
-	timeout := time.Duration(pollClientTimeout)
-	client := http.Client{Timeout: timeout}
+	if pollingEnabled {
+		doPolling(pollURI, waitInSeconds)
+	}
 
-	for !finished {
-		resp, err := client.Get(pollURI)
-		if err != nil {
-			log.Println("Error. during polling push to the frontend")
-			return err
-		}
+	return nil
+}
 
-		err = json.NewDecoder(resp.Body).Decode(&statusResponse)
-		resp.Body.Close()
+func doPolling(pollURI string, waitInSeconds int) {
+	quit := make(chan interface{}, 1)
+	defer close(quit)
 
-		if err != nil {
-			log.Println("Error. during parsing poll status result")
-			bodyData, _ := ioutil.ReadAll(resp.Body)
-			if bodyData != nil {
-				log.Println(bodyData)
-			}
-			return err
-		}
+	progressMonitor := verifyProgress(pollURI, quit)
+	wait := time.Duration(waitInSeconds) * time.Second
 
-		log.Printf("Pushing to the website to the development environment, status: [%s]", statusResponse.Meta.Status)
-
-		if statusResponse.Meta.Status == pollFinishedStatus || statusResponse.Meta.Status == pollFailedStatus {
-			finished = true
+	select {
+	case statusResponse, ok := <-progressMonitor:
+		if !ok {
 			break
 		}
 
-		time.Sleep(pollInterval)
+		log.Printf("Server output for the app bundling:")
+		for _, message := range statusResponse.Meta.Messages {
+			log.Printf("Widget: %s", message.Widget)
+			log.Printf("Output: %s", message.Output)
+		}
+
+		if statusResponse.Meta.Status == pollFinishedStatus {
+			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+		} else {
+			log.Printf("App push failed.")
+		}
+
+		openWebsite(statusResponse.Links.Preview)
+		close(progressMonitor)
+
+	case <-time.After(wait):
+		quit <- true // send a cancel signal to progressMonitor
+		log.Printf("Operation timed out after %s", wait)
 	}
+}
 
-	log.Printf("Server output for the app bundling:")
-	for _, message := range statusResponse.Meta.Messages {
-		log.Printf("Widget: %s", message.Widget)
-		log.Printf("Output: %s", message.Output)
-	}
+func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollResponse {
+	done := make(chan pushPollResponse, 1)
+	go func() {
+		var statusResponse pushPollResponse
+		timeout := time.Duration(pollClientTimeout)
+		client := http.Client{Timeout: timeout}
 
-	if statusResponse.Meta.Status == pollFinishedStatus {
-		log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
-	} else {
-		log.Printf("App push failed.")
-	}
+		for {
+			// check if operation should be cancelled
+			select {
+			case <-quit:
+				return
+			default:
+			}
 
-	openWebsite(statusResponse.Links.Preview)
+			resp, err := client.Get(pollURI)
+			if err != nil {
+				log.Println("Error. during polling push to the frontend")
+				close(done)
+				return
+			}
 
-	return nil
+			err = json.NewDecoder(resp.Body).Decode(&statusResponse)
+			resp.Body.Close()
+
+			if err != nil {
+				log.Println("Error. during parsing poll status result")
+				bodyData, _ := ioutil.ReadAll(resp.Body)
+				if bodyData != nil {
+					log.Println(bodyData)
+				}
+				close(done)
+				return
+			}
+
+			log.Printf("Pushing to the website to the development environment, status: [%s]", statusResponse.Meta.Status)
+
+			if statusResponse.Meta.Status == pollFinishedStatus || statusResponse.Meta.Status == pollFailedStatus {
+				done <- statusResponse
+				break
+			}
+
+			time.Sleep(pollInterval)
+		}
+	}()
+	return done
 }
 
 func pushToCatalog(pushURI string, appManifestFile string) (uploadURI string, err error) {
