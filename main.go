@@ -14,8 +14,9 @@ var (
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
-	targetEnv = "dev"
-	verbose   = false
+	targetEnv     = "dev"
+	verbose       = false
+	localFrontend = false
 )
 
 func main() {
@@ -27,6 +28,9 @@ func main() {
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
 		BoolVar(&verbose)
+
+	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
+		BoolVar(&localFrontend)
 
 	configureInitCommand(app)
 	configurePushCommand(app)
