@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -91,6 +92,16 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
 	uploadURI, err := pushToCatalog(pushURI, appManifestFile)
+
+	if localFrontend {
+		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		uploadURI = reg.ReplaceAllString(uploadURI, "http://localhost:3001$2")
+	}
 
 	if err != nil {
 		log.Println("Error during pushing the manifest to the App Catalog.")
