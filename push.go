@@ -147,11 +147,11 @@ func doPolling(pollURI string, waitInSeconds int) {
 
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
+			openWebsite(statusResponse.Links.Preview)
 		} else {
 			log.Printf("App push failed.")
 		}
 
-		openWebsite(statusResponse.Links.Preview)
 		close(progressMonitor)
 
 	case <-time.After(wait):
