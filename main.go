@@ -14,7 +14,7 @@ var (
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
-	targetEnv     = "dev"
+	targetEnv     = "staging"
 	verbose       = false
 	localFrontend = false
 )
