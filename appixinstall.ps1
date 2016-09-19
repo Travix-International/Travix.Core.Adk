@@ -27,11 +27,58 @@ public static extern IntPtr SendMessageTimeout(
   [win32.nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [uintptr]::Zero, "Environment", 2, 5000, [ref]$result) >$null 2>&1;
 }
 
+Function Test-RegistryKeyValue
+{
+    # see: http://stackoverflow.com/questions/5648931/test-if-registry-value-exists
+    param(
+        # The path to the registry key where the value should be set.  Will be created if it doesn't exist.
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        # The name of the value being set.
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    if( -not (Test-Path -Path $Path -PathType Container) )
+    {
+        return $false
+    }
+
+    $properties = Get-ItemProperty -Path $Path 
+    if( -not $properties )
+    {
+        return $false
+    }
+
+    $member = Get-Member -InputObject $properties -Name $Name
+    if( $member )
+    {
+        return $true
+    }
+    else
+    {
+        return $false
+    }
+
+}
+
 Function AddTo-SystemPath {
 Param(
   [string]$Path
   )
-  $oldpath = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\Environment" -Name PATH).path
+  $registryPath = "Registry::HKEY_CURRENT_USER\Environment"
+
+  if (Test-RegistryKeyValue -Path $registryPath -Name PATH)
+  {
+    $oldpath = (Get-ItemProperty -Path $registryPath -Name PATH).path
+  }
+  else
+  {
+    $oldpath = ""
+  }
 
   #if($oldpath -Match $Path) {
   if($oldpath.Contains($Path)) {
@@ -39,14 +86,15 @@ Param(
     return
   }
 
-  if($oldpath.EndsWith(";")) {
+  # If we have an empty string, or if we already end with a semicolon, then append the path
+  if($oldpath.EndsWith(";") -or $oldpath.Length -eq 0) {
     $newpath = "$oldpath$Path"
   }
   else {
     $newpath = "$oldpath;$Path"
   }
 
-  Set-ItemProperty -Path "Registry::HKEY_CURRENT_USER\Environment" -Name PATH -Value $newPath
+  Set-ItemProperty -Path $registryPath -Name PATH -Value $newPath
 
   # Updating the path for the current session
   $env:Path = $newpath
@@ -60,10 +108,15 @@ Write-Output "Starting the Appix ADK installation"
 $appixVersion = $env:APPIX_VERSION
 if ([string]::IsNullOrEmpty($appixVersion)){
   # Determine the latest version
-  $releases = Invoke-WebRequest https://github.com/Travix-International/Travix.Core.Adk/releases/latest -Headers @{"accept"="application/json"}
+  $req = [System.Net.WebRequest]::Create("https://github.com/Travix-International/Travix.Core.Adk/releases/latest") -as [System.Net.HttpWebRequest]
+  $req.Accept = "application/json"
+  $res = $req.GetResponse()
+  $outputStream = $res.GetResponseStream()
+  $reader = New-Object System.IO.StreamReader $outputStream
+  $content = $reader.ReadToEnd()
 
   # The releases are returned in the format {"id":3622206,"tag_name":"hello-1.0.0.11"}, we have to extract the tag_name.
-  $releases.Content -match '.*"tag_name":"(.*)".*' | Out-Null
+  $content -match '.*"tag_name":"(.*)".*' | Out-Null
   $latestVersion = $Matches[1]
   $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$latestVersion/appix.exe"
 }
