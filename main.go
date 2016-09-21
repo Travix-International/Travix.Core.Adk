@@ -14,7 +14,7 @@ var (
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
-	targetEnv     = "staging"
+	targetEnv     = "prod"
 	verbose       = false
 	localFrontend = false
 )
@@ -23,7 +23,7 @@ func main() {
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
-		Default("staging").
+		Default("prod").
 		EnumVar(&targetEnv, "local", "dev", "staging", "prod")
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
@@ -34,7 +34,7 @@ func main() {
 
 	configureInitCommand(app)
 	configurePushCommand(app)
-	configurePublishCommand(app)
+	configureSubmitCommand(app)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

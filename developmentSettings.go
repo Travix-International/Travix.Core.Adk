@@ -20,7 +20,7 @@ type DevelopmentSettings struct {
 }
 
 // DevFileName is the name of the file which contains the appix development settings for this specific application
-const DevFileName = ".appixDevSettings" // Exported for blacklisting use during push/publish
+const DevFileName = ".appixDevSettings" // Exported for blacklisting use during push/submit
 
 func readDevelopmentSettings(appPath string) (*DevelopmentSettings, error) {
 	devSettingsPath := path.Join(appPath, DevFileName)

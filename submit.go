@@ -10,34 +10,31 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-// PublishCommand used for publishing Apps
-type PublishCommand struct {
+// SubmitCommand used for submitting Apps
+type SubmitCommand struct {
 	appPath     string // path to the App folder
 	environment string // environment (default: dev)
 }
 
-type publishResponse struct {
+type submitResponse struct {
 	Messages []string
 	Links    map[string]string
 }
 
-const publishTemplateURI = "%s/files/publish/%s"
+const submitTemplateURI = "%s/files/publish/%s"
 
-func configurePublishCommand(app *kingpin.Application) {
-	cmd := &PublishCommand{}
-	appCmd := app.Command("publish", "Publish the App in the specified folder to the specified enviromnent.").
-		Action(cmd.publish).
+func configureSubmitCommand(app *kingpin.Application) {
+	cmd := &SubmitCommand{}
+	appCmd := app.Command("submit", "Submits the App for review.").
+		Action(cmd.submit).
 		Alias("pub").
 		Alias("publ")
 	appCmd.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
-	appCmd.Arg("environment", "Target environment (dev/acc/prod, default dev)").
-		Default("dev").
-		EnumVar(&cmd.environment, "dev", "acc", "prod")
 }
 
-func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
+func (cmd *SubmitCommand) submit(context *kingpin.ParseContext) error {
 	environment := cmd.environment
 
 	if environment == "" {
@@ -58,19 +55,19 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	log.Printf("Run publish for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
+	log.Printf("Run submit for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
 	rootURI := catalogURIs[targetEnv]
-	publishURI := fmt.Sprintf(publishTemplateURI, rootURI, appName)
+	submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 	files := map[string]string{
 		"manifest": appManifestFile,
 		"zapfile":  zapFile,
 	}
 
 	if verbose {
-		log.Println("Posting files to App Catalog: " + publishURI)
+		log.Println("Posting files to App Catalog: " + submitURI)
 	}
-	request, err := createMultiFileUploadRequest(publishURI, files, nil)
+	request, err := createMultiFileUploadRequest(submitURI, files, nil)
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return err
@@ -89,14 +86,14 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 		return err
 	}
 
-	var responseObject publishResponse
+	var responseObject submitResponse
 	err = json.Unmarshal(responseBody, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
 		}
 
-		responseObject = publishResponse{}
+		responseObject = submitResponse{}
 		responseObject.Messages = []string{string(responseBody)}
 	}
 
@@ -112,9 +109,9 @@ func (cmd *PublishCommand) publish(context *kingpin.ParseContext) error {
 	}
 
 	if response.StatusCode == http.StatusOK {
-		log.Println("App has been published successfully.")
+		log.Println("App has been submitted successfully.")
 	} else {
-		return fmt.Errorf("Publish failed, App Catalog returned statuscode %v", response.StatusCode)
+		return fmt.Errorf("Submit failed, App Catalog returned statuscode %v", response.StatusCode)
 	}
 
 	return nil
