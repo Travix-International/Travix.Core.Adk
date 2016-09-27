@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -33,6 +34,9 @@ func createMultiFileUploadRequest(uri string, files map[string]string, rawFields
 	if files != nil {
 		// We add the posted files to the request.
 		for key, path := range files {
+			if verbose {
+				log.Println("Trying to add to multi-upload: " + path)
+			}
 			file, err := os.Open(path)
 			if err != nil {
 				return nil, err
