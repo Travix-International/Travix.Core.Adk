@@ -5,7 +5,6 @@ platform: x64
 branches:
   only:
     - master
-    - TR-12109
 
 skip_tags: true
 
@@ -17,7 +16,6 @@ environment:
 install:
   - echo %PATH%
   - echo %GOPATH%
-  - echo %APPVEYOR_REPO_COMMIT%
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - go version
   - go env
@@ -39,9 +37,9 @@ deploy:
   description: 'Command-line ADK for Fireball app development.'
   provider: GitHub
   auth_token:
-    secure: WgqywJWDL0ETo/lqupJcU9z+391J69UNUTaojTB+nVtLsHL2VZDrT+khkAz1DIfI
+    secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
   artifact: binary-linux,binary-mac,binary-windows
-  draft: true
-  prerelease: true
+  draft: false
+  prerelease: false
   on:
-    branch: TR-12109
+    branch: master
