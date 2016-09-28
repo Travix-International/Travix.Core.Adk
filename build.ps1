@@ -7,7 +7,7 @@ if (Test-Path env:APPVEYOR_BUILD_VERSION) {
     $BUILD_VERSION = "0.0.0"
     $GIT_HASH = "000"
 }
-$BUILD_DATE = Get-Date -UFormat "%a.%B.%d.%Y.%R:%S.%z.%Z"
+$BUILD_DATE = (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %a.%B.%d.%Y.%R:%S) + ".+0000.UTC"
 $APP_LDFLAGS="-s -X main.version=$BUILD_VERSION -X main.gitHash=$GIT_HASH -X main.buildDate=$BUILD_DATE"
 
 
