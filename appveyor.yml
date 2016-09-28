@@ -42,6 +42,6 @@ deploy:
     secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
   artifact: binary-linux,binary-mac,binary-windows
   draft: true
-  prerelease: false
+  prerelease: true
   on:
-    branch: master
+    branch: TR-12109
