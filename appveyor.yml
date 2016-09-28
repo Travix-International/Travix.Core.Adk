@@ -5,6 +5,7 @@ platform: x64
 branches:
   only:
     - master
+    - TR-12109
 
 skip_tags: true
 
@@ -16,6 +17,7 @@ environment:
 install:
   - echo %PATH%
   - echo %GOPATH%
+  - echo %GIT_HASH%
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - go version
   - go env
@@ -39,7 +41,7 @@ deploy:
   auth_token:
     secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
   artifact: binary-linux,binary-mac,binary-windows
-  draft: false
+  draft: true
   prerelease: false
   on:
     branch: master
