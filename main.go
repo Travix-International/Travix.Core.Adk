@@ -1,9 +1,19 @@
 package main
 
 import (
+	"log"
 	"os"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
+)
+
+// Version numbers passed by build flags
+var (
+	version         string
+	buildDate       string
+	parsedBuildDate time.Time
+	gitHash         string
 )
 
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
@@ -20,6 +30,12 @@ var (
 )
 
 func main() {
+	var err error
+	parsedBuildDate, err = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
@@ -35,6 +51,7 @@ func main() {
 	configureInitCommand(app)
 	configurePushCommand(app)
 	configureSubmitCommand(app)
+	configureVersionCommand(app)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
