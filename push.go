@@ -94,6 +94,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	uploadURI, err := pushToCatalog(pushURI, appManifestFile)
 
 	if localFrontend {
+		log.Println("Ignoring URL and substituting local front-end URL instead.")
 		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
 		if err != nil {
 			log.Println(err)
@@ -121,12 +122,21 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 
 	if pollingEnabled {
 		doPolling(pollURI, waitInSeconds)
+	} else if verbose {
+		log.Println("Polling not enabled")
+	}
+
+	if verbose {
+		log.Println("Push command has completed")
 	}
 
 	return nil
 }
 
 func doPolling(pollURI string, waitInSeconds int) {
+	if verbose {
+		log.Println("Entering polling routine")
+	}
 	quit := make(chan interface{}, 1)
 	defer close(quit)
 
@@ -281,6 +291,7 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 
 	if verbose {
 		log.Println("Uploading the app to the Express frontend: " + uploadURI)
+		log.Println("Creating multi-file upload request")
 	}
 
 	request, err := createMultiFileUploadRequest(uploadURI, files, params)
@@ -288,6 +299,10 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
 		return "", err
+	}
+
+	if verbose {
+		log.Println("Multi-file upload request created, proceeding to call front-end")
 	}
 
 	client := &http.Client{}
