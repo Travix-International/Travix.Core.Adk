@@ -9,7 +9,8 @@ import (
 func configureVersionCommand(app *kingpin.Application) {
 	app.Command("version", "Displays version information").
 		Action(executeVersionCommand).
-		Alias("ver")
+		Alias("ver").
+		Alias("v")
 }
 
 func executeVersionCommand(context *kingpin.ParseContext) error {
