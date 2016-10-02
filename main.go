@@ -52,6 +52,7 @@ func main() {
 	configurePushCommand(app)
 	configureSubmitCommand(app)
 	configureVersionCommand(app)
+	configureWatchCommand(app)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
