@@ -18,6 +18,7 @@ import (
 type PushCommand struct {
 	appPath       string // path to the App folder
 	noPolling     bool   // skip polling flag
+	noBrowser     bool   // skip opening the site in the browser
 	waitInSeconds int    // polling timeout
 }
 
@@ -48,13 +49,16 @@ func configurePushCommand(app *kingpin.Application) {
 	cmd := &PushCommand{}
 	appCmd := app.Command("push", "Push the App in the specified folder.").
 		Action(cmd.push)
-	appCmd.Arg("appPath", "path to the App folder (default: current folder)").
+	appCmd.Arg("appPath", "path to the App folder (default: current folder).").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
-	appCmd.Flag("noPolling", "No Polling").
+	appCmd.Flag("noPolling", "DEPRECATED: Appix won't wait for the bundling of the app to be finished.").
 		Default("false").
 		BoolVar(&cmd.noPolling)
-	appCmd.Flag("wait", "Wait time in seconds until operation completes").
+	appCmd.Flag("noBrowser", "Appix won't open the frontend in the browser.").
+		Default("false").
+		BoolVar(&cmd.noBrowser)
+	appCmd.Flag("wait", "The maximum time appix waits for the app bundling to be finished.").
 		Short('w').
 		Default("180").
 		IntVar(&cmd.waitInSeconds)
@@ -63,6 +67,7 @@ func configurePushCommand(app *kingpin.Application) {
 func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	appPath := cmd.appPath
 	pollingEnabled := !cmd.noPolling
+	openBrowser := !cmd.noBrowser
 	waitInSeconds := cmd.waitInSeconds
 
 	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
@@ -121,9 +126,11 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	}
 
 	if pollingEnabled {
-		doPolling(pollURI, waitInSeconds)
-	} else if verbose {
+		doPolling(pollURI, waitInSeconds, openBrowser)
+	} else {
 		log.Println("Polling not enabled")
+		log.Println("NOTE: The --noPolling will be removed in a future version.")
+		log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
 	}
 
 	if verbose {
@@ -133,7 +140,7 @@ func (cmd *PushCommand) push(context *kingpin.ParseContext) error {
 	return nil
 }
 
-func doPolling(pollURI string, waitInSeconds int) {
+func doPolling(pollURI string, waitInSeconds int, openBrowser bool) {
 	if verbose {
 		log.Println("Entering polling routine")
 	}
@@ -157,7 +164,9 @@ func doPolling(pollURI string, waitInSeconds int) {
 
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
-			openWebsite(statusResponse.Links.Preview)
+			if openBrowser {
+				openWebsite(statusResponse.Links.Preview)
+			}
 		} else {
 			log.Printf("App push failed.")
 		}
