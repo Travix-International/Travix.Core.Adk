@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-BUILD_DATE=`date -u +"%a.%B.%d.%Y.%R:%S.%z.%Z"`
+BUILD_DATE=`LC_ALL=en_US.utf8 date -u +"%a.%B.%d.%Y.%R:%S.%z.%Z"`
 : "${APPVEYOR_BUILD_VERSION:=0.0.0}"
 : "${APPVEYOR_REPO_COMMIT:=`git rev-parse --short HEAD`}"
 APP_LDFLAGS="-s -X main.version=$APPVEYOR_BUILD_VERSION -X main.gitHash=$APPVEYOR_REPO_COMMIT -X main.buildDate=$BUILD_DATE"
