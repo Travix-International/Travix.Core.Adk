@@ -32,8 +32,7 @@ $env:GOOS="darwin"
 Write-Output "Building Mac binary..."
 # NOTE: If we want to build on Windows and target OSX, we need the -tags kqueue option to make the notify library to compile. Otherwise it would give a build error.
 # Details: https://github.com/rjeczalik/notify/issues/108#event-811951351
-# go build -tags kqueue -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
-go build -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
+go build -tags kqueue -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
 
 CheckLastExitCode "OSX"
 
