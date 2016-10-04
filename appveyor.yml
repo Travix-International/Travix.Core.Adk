@@ -32,14 +32,14 @@ artifacts:
   - path: bin/appix.exe
     name: binary-windows
 
-#deploy:
-#release: appix-$(appveyor_build_version)
-#description: 'Command-line ADK for Fireball app development.'
-#provider: GitHub
-#auth_token:
-#secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
-#artifact: binary-linux,binary-mac,binary-windows
-#draft: false
-#prerelease: false
-#on:
-#branch: master
+deploy:
+  release: appix-$(appveyor_build_version)
+  description: 'Command-line ADK for Fireball app development.'
+  provider: GitHub
+  auth_token:
+    secure: ZkOJAiZBmapKpbiqovaofs+W0foBWaV9Jom4yBYzcRKlAk4Bee+5b7t+5LrQRVn8
+  artifact: binary-linux,binary-mac,binary-windows
+  draft: false
+  prerelease: false
+  on:
+    branch: master
