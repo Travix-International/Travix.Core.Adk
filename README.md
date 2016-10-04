@@ -2,7 +2,7 @@
 
 App Developer Kit for the Travix Fireball infrastructure. The ADK consists of `appix`, a CLI tool to publish Apps to the App Catalog. 
 
-[![Build status](https://ci.appveyor.com/api/projects/status/7y64b9xayd3r51xe?svg=true)](https://ci.appveyor.com/project/markvincze/travix-core-adk)
+[![Build Status](https://travis-ci.org/Travix-International/Travix.Core.Adk.svg?branch=master)](https://travis-ci.org/Travix-International/Travix.Core.Adk)
 [![GitHub release](https://img.shields.io/github/release/Travix-International/Travix.Core.Adk.svg)](https://github.com/Travix-International/Travix.Core.Adk/releases/latest)
 
 ## Installation
