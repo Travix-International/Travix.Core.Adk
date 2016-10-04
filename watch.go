@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"path"
+	"path/filepath"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/rjeczalik/notify"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -31,7 +33,14 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 	// But we don't want to push for each intermediate change. (So let's say there were 3 more file changes during the push. Afterwards we want to push only once, and not three more times.)
 	c := make(chan notify.EventInfo, 1)
 
-	if err := notify.Watch(path.Join(appPath, "..."), c, notify.All); err != nil {
+	// NOTE: We need to convert to absolute path, because the file watcher wouldn't accept relative paths on Windows.
+	absPath, err := filepath.Abs(appPath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := notify.Watch(path.Join(absPath, "..."), c, notify.All); err != nil {
 		log.Fatal(err)
 	}
 	defer notify.Stop(c)
