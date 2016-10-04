@@ -1,3 +1,12 @@
+function CheckLastExitCode {
+    param ([String]$Platform = "")
+
+    if ($LastExitCode -ne 0) {
+        $msg = "The build failed for the platform $Platform"
+        throw $msg
+    }
+}
+
 Write-Output "Building the appix binaries..."
 
 if (Test-Path env:APPVEYOR_BUILD_VERSION) {
@@ -17,12 +26,21 @@ $env:GOOS="linux"
 Write-Output "Building Linux binary..."
 go build -ldflags "$APP_LDFLAGS" -o bin\appix-linux -i .
 
+CheckLastExitCode "Linux"
+
 $env:GOOS="darwin"
 Write-Output "Building Mac binary..."
+# NOTE: If we want to build on Windows and target OSX, we need the -tags kqueue option to make the notify library to compile. Otherwise it would give a build error.
+# Details: https://github.com/rjeczalik/notify/issues/108#event-811951351
+# go build -tags kqueue -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
 go build -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
+
+CheckLastExitCode "OSX"
 
 $env:GOOS="windows"
 Write-Output "Building Windows binary..."
 go build -ldflags "$APP_LDFLAGS" -o bin\appix.exe -i .
+
+CheckLastExitCode "Windows"
 
 Write-Output "Done!"
