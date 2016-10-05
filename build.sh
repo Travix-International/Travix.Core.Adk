@@ -16,4 +16,6 @@ GOARCH=amd64 GOOS=darwin go build -ldflags "$APP_LDFLAGS" -o bin/appix-mac -i .
 echo "Building Linux binary..."
 GOARCH=amd64 GOOS=linux go build -ldflags "$APP_LDFLAGS" -o bin/appix-linux -i . 
 
+ls -la bin
+
 echo "Done!"
