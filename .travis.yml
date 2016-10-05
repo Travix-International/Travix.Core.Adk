@@ -1,3 +1,5 @@
+osx_image: xcode8
+
 language: go
 
 go:
