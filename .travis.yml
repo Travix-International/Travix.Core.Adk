@@ -10,13 +10,13 @@ script:
 
 deploy:
   provider: releases
-  skip_cleaup: true
+  skip_cleanup: true
   api_key:
     secure: lFGBaFkQWNzI8t1szyc1EyaqHx1fj3zHhqmdPytVuhDIWEAgrzMrTHte4nhNv8ypMS+xQjARZqCVcJJuCShhbU4BiMdSkZbLD5BxEDgqq5OdX5wQSU9t0xneWYoOAawTdLJVzpWBcObH7pDBPHQNwbiMhwrQ4O6IlRc+gOztE0Djoi7p5IwjKr6IKF5rHnbedMIpsivIbO6STeXUnR/PjKXu0QQzZty/NVYCISRvVB2by/6SLbYDDjrdY04I0RbmDhZnaS3VV1oR2AXtg9mu+5FFvfGFAuWMcEGfkiG4H3JWwSPlv5BY0gxYMMagiGU/0Sq1Qu/39/XevKgItbQ0J7lbI67O76O3jHF1Hszv0SXV1F5hlEX62YIL8qvGKBq5D6imir1Wy99FfpEjlh4b2WyfeW+d5Ku0EVKowp4eBGF1QJ5bjW3P+HmbRNpNmwO1fpgciyfIXciBUfI+vsfV1G67cwNm0C04TZyH3rNVWx/9HVdqqkPsMjn0yHhcBEm4oVKV4YGpKcm9B9LqDvNDCfvhhupUl8fQSJ1lDPDIYWB7yvXYtEIMFgtkaNv0XZ2a7wS1BpV1ve04nyMJHB/pvDTpvT8kzKmHoILOEmXaBfxHcuvFnVZ1+QB0kRuggqSzETntd6y+YRx3jIaTubFGs8yMj2jWIsM0cZLMcT4qsCY=
   file:
-    - ${TRAVIS_BUILD_DIR}/bin/appix-mac
-    - ${TRAVIS_BUILD_DIR}/bin/appix-linux
-    - ${TRAVIS_BUILD_DIR}/bin/appix.exe
+    - bin/appix-mac
+    - bin/appix-linux
+    - bin/appix.exe
   on:
     repo: Travix-International/Travix.Core.Adk
     branch: master
