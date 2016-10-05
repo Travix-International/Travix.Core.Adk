@@ -19,4 +19,4 @@ deploy:
     - bin/appix.exe
   on:
     repo: Travix-International/Travix.Core.Adk
-    branch: master
+    tags: true
