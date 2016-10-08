@@ -42,6 +42,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/gorilla/websocket",
+			"repository": "https://github.com/gorilla/websocket",
+			"vcs": "git",
+			"revision": "2d1e4548da234d9cb742cc3628556fef86aafbac",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/mattn/go-isatty",
 			"repository": "https://github.com/mattn/go-isatty",
 			"vcs": "git",
