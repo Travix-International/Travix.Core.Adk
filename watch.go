@@ -4,15 +4,45 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/rjeczalik/notify"
 )
 
+// This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
+//
+// NOTE: The file watcher libraries sometimes send two separate events for one file change in quick succession. (Also, some editors, like vim, are doing multiple genuine file modifications for one single file save.)
+// To mitigate this we initially wait for a short while befor starting the push, to make sure we are not pushing twice for a single change. That's why we have the initialDelay state.
+//
+//                              file change event
+// initial state                     received
+//   -------------> WAITING ------------------------> INITIAL_DELAY
+//                     Λ                                    |
+//                     |                                    | 100ms passed, executing push
+//                     |                                    |
+//                     |          push completed            V
+//                      -------------------------------- PUSHING
+//                                                        Λ   |
+//                                         push completed |   | file change event received
+//                                     execute a new push |   |
+//                                                        |   V
+//                                                 PUSHING_AND_GOT_EVENT
+//
+const (
+	waiting            = iota
+	initialDelay       = iota
+	pushing            = iota
+	pushingAndGotEvent = iota
+)
+
 var (
-	appPath   string
-	noBrowser bool
+	appPath      string
+	noBrowser    bool
+	watcherState = waiting
+	mutex        = &sync.Mutex{}
 )
 
 func configureWatchCommand(app *kingpin.Application) {
@@ -58,27 +88,50 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 		// Block until an event is received.
 		ei := <-c
 
-		log.Println("File change detected, executing appix push.")
-
 		if verbose {
 			log.Println("File change event details:", ei)
 		}
 
-		doPush(context, false)
-
-		sendReload()
-
-		log.Println("Push done, watching for file changes.")
+		mutex.Lock()
+		if watcherState == waiting {
+			watcherState = initialDelay
+			log.Println("File change detected, executing appix push.")
+			go doPush(context, false)
+		} else if watcherState == pushing {
+			watcherState = pushingAndGotEvent
+		}
+		mutex.Unlock()
 	}
 }
 
 func doPush(context *kingpin.ParseContext, openBrowser bool) {
-	pushCmd := &PushCommand{}
+	time.Sleep(100 * time.Millisecond)
 
-	pushCmd.appPath = appPath
-	pushCmd.noPolling = false
-	pushCmd.waitInSeconds = 180
-	pushCmd.noBrowser = !openBrowser
+	watcherState = pushing
 
-	pushCmd.push(context)
+	for watcherState == pushing {
+		pushCmd := &PushCommand{}
+
+		pushCmd.appPath = appPath
+		pushCmd.noPolling = false
+		pushCmd.waitInSeconds = 180
+		pushCmd.noBrowser = !openBrowser
+
+		pushCmd.push(context)
+
+		if !openBrowser {
+			sendReload()
+		}
+
+		mutex.Lock()
+		if watcherState == pushingAndGotEvent {
+			// A change event arrived while the previous push was happening, we push again.
+			watcherState = pushing
+			mutex.Unlock()
+		} else {
+			watcherState = waiting
+			mutex.Unlock()
+			log.Println("Push done, watching for file changes.")
+		}
+	}
 }
