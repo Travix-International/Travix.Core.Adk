@@ -4,7 +4,6 @@ import (
 	"log"
 	"path"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -42,7 +41,6 @@ var (
 	appPath      string
 	noBrowser    bool
 	watcherState = waiting
-	mutex        = &sync.Mutex{}
 )
 
 func configureWatchCommand(app *kingpin.Application) {
@@ -58,10 +56,12 @@ func configureWatchCommand(app *kingpin.Application) {
 }
 
 func executeWatchCommand(context *kingpin.ParseContext) error {
-	// NOTE: The second argument controls the buffer length.
-	// 1 is ideal, because if any number of change happen during the push, we want to push one more time afterwards.
-	// But we don't want to push for each intermediate change. (So let's say there were 3 more file changes during the push. Afterwards we want to push only once, and not three more times.)
-	c := make(chan notify.EventInfo, 1)
+	// Channel on which we get file change events.
+	fileWatch := make(chan notify.EventInfo)
+	// Channel on which we get an event when the initial short delay after a change is passed.
+	initialDelayDone := make(chan int)
+	// Channel on which we get events when the pushes are done.
+	buildDone := make(chan int)
 
 	// NOTE: We need to convert to absolute path, because the file watcher wouldn't accept relative paths on Windows.
 	absPath, err := filepath.Abs(appPath)
@@ -70,68 +70,73 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 		log.Fatal(err)
 	}
 
-	if err := notify.Watch(path.Join(absPath, "..."), c, notify.All); err != nil {
+	if err := notify.Watch(path.Join(absPath, "..."), fileWatch, notify.All); err != nil {
 		log.Fatal(err)
 	}
 
-	defer notify.Stop(c)
+	defer notify.Stop(fileWatch)
 
 	startLivereloadServer()
 
 	// Immediately push once, and then start watching.
-	doPush(context, true)
+	doPush(context, true, nil)
 
 	sendReload()
 
-	// Infinite loop, the user can exit with Ctrl+C
+	// Infinite loop, the user can exit with Ctrl+C.
 	for {
-		// Block until an event is received.
-		ei := <-c
+		select {
+		case ei := <-fileWatch:
+			if verbose {
+				log.Println("File change event details:", ei)
+			}
 
-		if verbose {
-			log.Println("File change event details:", ei)
-		}
+			if watcherState == waiting {
+				watcherState = initialDelay
 
-		mutex.Lock()
-		if watcherState == waiting {
-			watcherState = initialDelay
+				go waitForDelay(initialDelayDone)
+			} else if watcherState == pushing {
+				watcherState = pushingAndGotEvent
+			}
+		case _ = <-initialDelayDone:
+			watcherState = pushing
+
 			log.Println("File change detected, executing appix push.")
-			go doPush(context, false)
-		} else if watcherState == pushing {
-			watcherState = pushingAndGotEvent
+
+			go doPush(context, false, &buildDone)
+		case _ = <-buildDone:
+			if watcherState == pushingAndGotEvent {
+				// A change event arrived while the previous push was happening, we push again.
+				watcherState = pushing
+				go doPush(context, false, &buildDone)
+			} else {
+				watcherState = waiting
+				log.Println("Push done, watching for file changes.")
+			}
 		}
-		mutex.Unlock()
 	}
 }
 
-func doPush(context *kingpin.ParseContext, openBrowser bool) {
+func waitForDelay(delayDone chan int) {
 	time.Sleep(100 * time.Millisecond)
+	delayDone <- 0
+}
 
-	watcherState = pushing
+func doPush(context *kingpin.ParseContext, openBrowser bool, buildDone *chan int) {
+	pushCmd := &PushCommand{}
 
-	for watcherState == pushing {
-		pushCmd := &PushCommand{}
+	pushCmd.appPath = appPath
+	pushCmd.noPolling = false
+	pushCmd.waitInSeconds = 180
+	pushCmd.noBrowser = !openBrowser
 
-		pushCmd.appPath = appPath
-		pushCmd.noPolling = false
-		pushCmd.waitInSeconds = 180
-		pushCmd.noBrowser = !openBrowser
+	pushCmd.push(context)
 
-		pushCmd.push(context)
+	if !openBrowser {
+		sendReload()
+	}
 
-		if !openBrowser {
-			sendReload()
-		}
-
-		mutex.Lock()
-		if watcherState == pushingAndGotEvent {
-			// A change event arrived while the previous push was happening, we push again.
-			watcherState = pushing
-			mutex.Unlock()
-		} else {
-			watcherState = waiting
-			mutex.Unlock()
-			log.Println("Push done, watching for file changes.")
-		}
+	if buildDone != nil {
+		*(buildDone) <- 0
 	}
 }
