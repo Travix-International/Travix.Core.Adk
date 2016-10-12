@@ -61,7 +61,7 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 	// Channel on which we get an event when the initial short delay after a change is passed.
 	initialDelayDone := make(chan int)
 	// Channel on which we get events when the pushes are done.
-	buildDone := make(chan int)
+	pushDone := make(chan int)
 
 	// NOTE: We need to convert to absolute path, because the file watcher wouldn't accept relative paths on Windows.
 	absPath, err := filepath.Abs(appPath)
@@ -94,21 +94,23 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 			if watcherState == waiting {
 				watcherState = initialDelay
 
-				go waitForDelay(initialDelayDone)
+				time.AfterFunc(100*time.Millisecond, func() {
+					initialDelayDone <- 0
+				})
 			} else if watcherState == pushing {
 				watcherState = pushingAndGotEvent
 			}
-		case _ = <-initialDelayDone:
+		case <-initialDelayDone:
 			watcherState = pushing
 
 			log.Println("File change detected, executing appix push.")
 
-			go doPush(context, false, &buildDone)
-		case _ = <-buildDone:
+			go doPush(context, false, &pushDone)
+		case <-pushDone:
 			if watcherState == pushingAndGotEvent {
 				// A change event arrived while the previous push was happening, we push again.
 				watcherState = pushing
-				go doPush(context, false, &buildDone)
+				go doPush(context, false, &pushDone)
 			} else {
 				watcherState = waiting
 				log.Println("Push done, watching for file changes.")
@@ -117,12 +119,7 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 	}
 }
 
-func waitForDelay(delayDone chan int) {
-	time.Sleep(100 * time.Millisecond)
-	delayDone <- 0
-}
-
-func doPush(context *kingpin.ParseContext, openBrowser bool, buildDone *chan int) {
+func doPush(context *kingpin.ParseContext, openBrowser bool, pushDone *chan int) {
 	pushCmd := &PushCommand{}
 
 	pushCmd.appPath = appPath
@@ -136,7 +133,7 @@ func doPush(context *kingpin.ParseContext, openBrowser bool, buildDone *chan int
 		sendReload()
 	}
 
-	if buildDone != nil {
-		*(buildDone) <- 0
+	if pushDone != nil {
+		*(pushDone) <- 0
 	}
 }
