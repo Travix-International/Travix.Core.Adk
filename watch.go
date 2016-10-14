@@ -43,10 +43,15 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 	if err := notify.Watch(path.Join(absPath, "..."), c, notify.All); err != nil {
 		log.Fatal(err)
 	}
+
 	defer notify.Stop(c)
 
+	startLivereloadServer()
+
 	// Immediately push once, and then start watching.
-	doPush(context)
+	doPush(context, true)
+
+	sendReload()
 
 	// Infinite loop, the user can exit with Ctrl+C
 	for {
@@ -59,19 +64,21 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 			log.Println("File change event details:", ei)
 		}
 
-		doPush(context)
+		doPush(context, false)
+
+		sendReload()
 
 		log.Println("Push done, watching for file changes.")
 	}
 }
 
-func doPush(context *kingpin.ParseContext) {
+func doPush(context *kingpin.ParseContext, openBrowser bool) {
 	pushCmd := &PushCommand{}
 
 	pushCmd.appPath = appPath
 	pushCmd.noPolling = false
 	pushCmd.waitInSeconds = 180
-	pushCmd.noBrowser = noBrowser
+	pushCmd.noBrowser = !openBrowser
 
 	pushCmd.push(context)
 }
