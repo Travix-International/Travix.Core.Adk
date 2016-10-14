@@ -4,15 +4,43 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/rjeczalik/notify"
 )
 
+// This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
+//
+// NOTE: The file watcher libraries sometimes send two separate events for one file change in quick succession. (Also, some editors, like vim, are doing multiple genuine file modifications for one single file save.)
+// To mitigate this we initially wait for a short while befor starting the push, to make sure we are not pushing twice for a single change. That's why we have the initialDelay state.
+//
+//                              file change event
+// initial state                     received
+//   -------------> WAITING ------------------------> INITIAL_DELAY
+//                     Λ                                    |
+//                     |                                    | 100ms passed, executing push
+//                     |                                    |
+//                     |          push completed            V
+//                      -------------------------------- PUSHING
+//                                                        Λ   |
+//                                         push completed |   | file change event received
+//                                     execute a new push |   |
+//                                                        |   V
+//                                                 PUSHING_AND_GOT_EVENT
+//
+const (
+	waiting            = iota
+	initialDelay       = iota
+	pushing            = iota
+	pushingAndGotEvent = iota
+)
+
 var (
-	appPath   string
-	noBrowser bool
+	appPath      string
+	noBrowser    bool
+	watcherState = waiting
 )
 
 func configureWatchCommand(app *kingpin.Application) {
@@ -28,10 +56,12 @@ func configureWatchCommand(app *kingpin.Application) {
 }
 
 func executeWatchCommand(context *kingpin.ParseContext) error {
-	// NOTE: The second argument controls the buffer length.
-	// 1 is ideal, because if any number of change happen during the push, we want to push one more time afterwards.
-	// But we don't want to push for each intermediate change. (So let's say there were 3 more file changes during the push. Afterwards we want to push only once, and not three more times.)
-	c := make(chan notify.EventInfo, 1)
+	// Channel on which we get file change events.
+	fileWatch := make(chan notify.EventInfo)
+	// Channel on which we get an event when the initial short delay after a change is passed.
+	initialDelayDone := make(chan int)
+	// Channel on which we get events when the pushes are done.
+	pushDone := make(chan int)
 
 	// NOTE: We need to convert to absolute path, because the file watcher wouldn't accept relative paths on Windows.
 	absPath, err := filepath.Abs(appPath)
@@ -40,39 +70,56 @@ func executeWatchCommand(context *kingpin.ParseContext) error {
 		log.Fatal(err)
 	}
 
-	if err := notify.Watch(path.Join(absPath, "..."), c, notify.All); err != nil {
+	if err := notify.Watch(path.Join(absPath, "..."), fileWatch, notify.All); err != nil {
 		log.Fatal(err)
 	}
 
-	defer notify.Stop(c)
+	defer notify.Stop(fileWatch)
 
 	startLivereloadServer()
 
 	// Immediately push once, and then start watching.
-	doPush(context, true)
+	doPush(context, true, nil)
 
 	sendReload()
 
-	// Infinite loop, the user can exit with Ctrl+C
+	// Infinite loop, the user can exit with Ctrl+C.
 	for {
-		// Block until an event is received.
-		ei := <-c
+		select {
+		case ei := <-fileWatch:
+			if verbose {
+				log.Println("File change event details:", ei)
+			}
 
-		log.Println("File change detected, executing appix push.")
+			if watcherState == waiting {
+				watcherState = initialDelay
 
-		if verbose {
-			log.Println("File change event details:", ei)
+				time.AfterFunc(100*time.Millisecond, func() {
+					initialDelayDone <- 0
+				})
+			} else if watcherState == pushing {
+				watcherState = pushingAndGotEvent
+			}
+		case <-initialDelayDone:
+			watcherState = pushing
+
+			log.Println("File change detected, executing appix push.")
+
+			go doPush(context, false, &pushDone)
+		case <-pushDone:
+			if watcherState == pushingAndGotEvent {
+				// A change event arrived while the previous push was happening, we push again.
+				watcherState = pushing
+				go doPush(context, false, &pushDone)
+			} else {
+				watcherState = waiting
+				log.Println("Push done, watching for file changes.")
+			}
 		}
-
-		doPush(context, false)
-
-		sendReload()
-
-		log.Println("Push done, watching for file changes.")
 	}
 }
 
-func doPush(context *kingpin.ParseContext, openBrowser bool) {
+func doPush(context *kingpin.ParseContext, openBrowser bool, pushDone *chan int) {
 	pushCmd := &PushCommand{}
 
 	pushCmd.appPath = appPath
@@ -81,4 +128,12 @@ func doPush(context *kingpin.ParseContext, openBrowser bool) {
 	pushCmd.noBrowser = !openBrowser
 
 	pushCmd.push(context)
+
+	if !openBrowser {
+		sendReload()
+	}
+
+	if pushDone != nil {
+		*(pushDone) <- 0
+	}
 }
