@@ -13,7 +13,7 @@ window.onload = function () {
     }
     
     function tryConnectToLivereload() {
-        conn = new WebSocket("ws://localhost:13221/appixlivereload");
+        conn = new WebSocket("wss://localhost:13221/appixlivereload");
         conn.onclose = function (evt) {
             appendLog("Connection closed");
             setTimeout(tryConnectToLivereload, 2000);
