@@ -196,7 +196,8 @@ func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollRespon
 
 			resp, err := client.Get(pollURI)
 			if err != nil {
-				log.Println("Error. during polling push to the frontend")
+				log.Println("Error during polling the bundling status.")
+				log.Println(err)
 				close(done)
 				return
 			}
