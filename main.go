@@ -49,6 +49,7 @@ func main() {
 		BoolVar(&localFrontend)
 
 	configureInitCommand(app)
+	configureLoginCommand(app)
 	configurePushCommand(app)
 	configureSubmitCommand(app)
 	configureVersionCommand(app)
