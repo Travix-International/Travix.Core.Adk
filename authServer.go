@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -20,9 +22,46 @@ func createAuthFileIfNotExists(c Config) error {
 	return nil
 }
 
-func startAuthServer(c chan bool) {
-	var config = GetConfig()
+type AuthUser struct {
+	Uid string
+	DisplayName string
+	Email string
+	EmailVerified bool
+	ApiKey string
+	AppName string
+	AuthDomain string
+}
 
+type AuthCredential struct {
+	IdToken string
+	AccessToken string
+	Provider string
+}
+
+type Auth struct {
+	User AuthUser
+	Credential AuthCredential
+}
+
+func GetAuth(c Config) (*Auth, error) {
+	content, readErr := ioutil.ReadFile(c.AuthFilePath)
+	if readErr != nil {
+		log.Printf("Failed to read auth file %s", c.AuthFilePath)
+		return nil, readErr
+	}
+
+	auth := Auth{}
+	unmarshalErr := json.Unmarshal(content, &auth)
+
+	if unmarshalErr != nil {
+		log.Printf("Failed to unmarshal auth content")
+		return nil, unmarshalErr
+	}
+
+	return &auth, nil
+}
+
+func startAuthServer(c chan bool, config Config) {
 	firebaseConfig := `
 		<script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>
 		<script>
@@ -131,5 +170,5 @@ func startAuthServer(c chan bool) {
 		c <- true
 	})
 
-	http.ListenAndServe(":7001", nil)
+	http.ListenAndServe(":" + config.AuthServerPort, nil)
 }

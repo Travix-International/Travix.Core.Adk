@@ -16,7 +16,7 @@ func executeLoginCommand(context *kingpin.ParseContext) error {
 	var url = "http://localhost:" + config.AuthServerPort
 
 	ch := make(chan bool)
-	go startAuthServer(ch)
+	go startAuthServer(ch, config)
 
 	fmt.Println("Opening url: " + url)
 	openWebsite(url)
