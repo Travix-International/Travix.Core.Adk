@@ -110,6 +110,11 @@ func (cmd *SubmitCommand) submit(context *kingpin.ParseContext) error {
 
 	if response.StatusCode == http.StatusOK {
 		log.Println("App has been submitted successfully.")
+
+		if acceptanceQueryUrlPath, ok := responseObject.Links["acc:query"]; ok {
+			log.Println("You can use the following query URL to get this particular version of this app:")
+			log.Printf("\t%s%s\n", rootURI, acceptanceQueryUrlPath)
+		}
 	} else {
 		return fmt.Errorf("Submit failed, App Catalog returned statuscode %v", response.StatusCode)
 	}
