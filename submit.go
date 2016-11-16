@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -112,15 +111,9 @@ func (cmd *SubmitCommand) submit(context *kingpin.ParseContext) error {
 	if response.StatusCode == http.StatusOK {
 		log.Println("App has been submitted successfully.")
 
-		hasQueryUrl := false
-		for key, val := range responseObject.Links {
-			if strings.HasSuffix(key, ":query") {
-				if hasQueryUrl != true {
-					log.Println("You can use the following query URL to get this particular version of this app:")
-					hasQueryUrl = true
-				}
-				log.Printf("\t%s%s\n", rootURI, val)
-			}
+		if acceptanceQueryUrlPath, ok := responseObject.Links["acc:query"]; ok {
+			log.Println("You can use the following query URL to get this particular version of this app:")
+			log.Printf("\t%s%s\n", rootURI, acceptanceQueryUrlPath)
 		}
 	} else {
 		return fmt.Errorf("Submit failed, App Catalog returned statuscode %v", response.StatusCode)
