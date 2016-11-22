@@ -22,6 +22,13 @@ func createAuthFileIfNotExists(c Config) error {
 	return nil
 }
 
+type StsTokenManager struct {
+	ApiKey string
+	RefreshToken string
+	AccessToken string
+	ExpirationTime int
+}
+
 type AuthUser struct {
 	Uid string
 	DisplayName string
@@ -30,6 +37,7 @@ type AuthUser struct {
 	ApiKey string
 	AppName string
 	AuthDomain string
+	StsTokenManager StsTokenManager
 }
 
 type AuthCredential struct {
@@ -41,21 +49,6 @@ type AuthCredential struct {
 type Auth struct {
 	User AuthUser
 	Credential AuthCredential
-}
-
-type Profile struct {
-	Email string
-	FirebaseUserId string
-	Id int
-	IsEnabled bool
-	IsVerified bool
-	Name string
-	PublisherId string
-}
-
-type ProfileResponse struct {
-	HasProfile bool
-	Profile Profile
 }
 
 func GetAuth(c Config) (*Auth, error) {

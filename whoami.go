@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,30 +24,76 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 		return nil
 	}
 
-	accessToken := auth.Credential.AccessToken
+	refreshToken := auth.User.StsTokenManager.RefreshToken
 
-	type UserInfo struct {
-		Email string
-		FamilyName string
-		Gender string
-		GivenName string
-		Hd string
-		Id string
-		Link string
-		Locale string
-		Name string
-		Picture string
-		VerifiedEmail string
+	// fetch refreshed token
+	type TokenBody struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn string `json:"expires_in"`
+		IdToken string `json:"id_token"`
+		ProjectId string `json:"project_id"`
+		RefreshToken string `json:"refresh_token"`
+		TokenType string `json:"token_type"`
+		UserId string `json:"user_id"`
 	}
 
-	client := &http.Client{}
-	req, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v1/userinfo?alt=json", nil)
-	req.Header.Set("Authorization", "Bearer " + accessToken)
-	res, _ := client.Do(req)
+	tokenClient := &http.Client{}
+	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
+	tokenReq, _ := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key=" + config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
+	tokenReq.Header.Set("Content-Type", "application/json")
+	tokenRes, _ := tokenClient.Do(tokenReq)
 
-	userInfo := UserInfo{}
-	json.NewDecoder(res.Body).Decode(&userInfo)
-	fmt.Println(userInfo.Email)
+	tokenBody := TokenBody{}
+	json.NewDecoder(tokenRes.Body).Decode(&tokenBody)
+
+	tokenType := tokenBody.TokenType
+	tokenValue := tokenBody.IdToken
+
+	// fetch profile
+	type Profile struct {
+		Email string
+		FirebaseUserId string
+		Id int
+		IsEnabled bool
+		IsVerified bool
+		Name string
+		PublisherId string
+	}
+
+	type ProfileBody struct {
+		HasProfile bool
+		Profile Profile
+	}
+
+	profileClient := &http.Client{}
+	profileReq, _ := http.NewRequest("GET", config.DeveloperProfileUrl + "/profile", nil)
+	profileReq.Header.Set("Content-Type", "application/json")
+	profileReq.Header.Set("Authorization", tokenType + " " + tokenValue)
+	profileRes, _ := profileClient.Do(profileReq)
+
+	profileBody := ProfileBody{}
+	json.NewDecoder(profileRes.Body).Decode(&profileBody)
+
+	if profileBody.HasProfile {
+		fmt.Println("Email: " + profileBody.Profile.Email)
+		fmt.Println("Name: " + profileBody.Profile.Name)
+
+		if profileBody.Profile.IsEnabled == true {
+			fmt.Println("Enabled: Yes")
+		} else {
+			fmt.Println("Enabled: No")
+		}
+
+		if profileBody.Profile.IsVerified == true {
+			fmt.Println("Verified: Yes")
+		} else {
+			fmt.Println("Verified: No")
+		}
+
+		fmt.Println("Publisher ID: " + profileBody.Profile.PublisherId)
+	} else {
+		fmt.Println("No profile found.")
+	}
 
 	return nil
 }
