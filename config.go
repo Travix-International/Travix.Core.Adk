@@ -33,13 +33,13 @@ func GetConfig() Config {
 		DirectoryPath: directoryPath,
 		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
 
-		DeveloperProfileUrl: "",
+		DeveloperProfileUrl: travixDeveloperProfileUrl,
 
-		FirebaseApiKey:            "",
-		FirebaseAuthDomain:        "",
-		FirebaseDatabaseUrl:       "",
-		FirebaseStorageBucket:     "",
-		FirebaseMessagingSenderId: "",
+		FirebaseApiKey:            travixFirebaseApiKey,
+		FirebaseAuthDomain:        travixFirebaseAuthDomain,
+		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
+		FirebaseStorageBucket:     travixFirebaseStorageBucket,
+		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
 
 		AuthServerPort: "7001",
 	}
