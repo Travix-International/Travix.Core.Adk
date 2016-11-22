@@ -43,6 +43,21 @@ type Auth struct {
 	Credential AuthCredential
 }
 
+type Profile struct {
+	Email string
+	FirebaseUserId string
+	Id int
+	IsEnabled bool
+	IsVerified bool
+	Name string
+	PublisherId string
+}
+
+type ProfileResponse struct {
+	HasProfile bool
+	Profile Profile
+}
+
 func GetAuth(c Config) (*Auth, error) {
 	content, readErr := ioutil.ReadFile(c.AuthFilePath)
 	if readErr != nil {

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -21,10 +23,30 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 		return nil
 	}
 
-	email := auth.User.Email
+	accessToken := auth.Credential.AccessToken
 
-	// @TODO: verify by pinging server
-	fmt.Println(email)
+	type UserInfo struct {
+		Email string
+		FamilyName string
+		Gender string
+		GivenName string
+		Hd string
+		Id string
+		Link string
+		Locale string
+		Name string
+		Picture string
+		VerifiedEmail string
+	}
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v1/userinfo?alt=json", nil)
+	req.Header.Set("Authorization", "Bearer " + accessToken)
+	res, _ := client.Do(req)
+
+	userInfo := UserInfo{}
+	json.NewDecoder(res.Body).Decode(&userInfo)
+	fmt.Println(userInfo.Email)
 
 	return nil
 }

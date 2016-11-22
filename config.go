@@ -10,6 +10,8 @@ type Config struct {
 	DirectoryPath string
 	AuthFilePath string
 
+	DeveloperProfileUrl string
+
 	FirebaseApiKey string
 	FirebaseAuthDomain string
 	FirebaseDatabaseUrl string
@@ -30,6 +32,8 @@ func GetConfig() Config {
 	c := Config{
 		DirectoryPath: directoryPath,
 		AuthFilePath: filepath.Join(directoryPath, "auth.json"),
+
+		DeveloperProfileUrl: "",
 
 		FirebaseApiKey: "",
 		FirebaseAuthDomain: "",
