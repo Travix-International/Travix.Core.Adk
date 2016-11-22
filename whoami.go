@@ -11,7 +11,7 @@ import (
 )
 
 func configureWhoamiCommand(app *kingpin.Application) {
-	app.Command("whoami", "Displays logged in user's email address").
+	app.Command("whoami", "Displays logged in user's information").
 		Action(executeWhoamiCommand)
 }
 

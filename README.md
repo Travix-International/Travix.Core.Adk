@@ -54,7 +54,7 @@ Clone the repo to your `$GOPATH`:
 $ git clone git@github.com:Travix-International/Travix.Core.Adk.git $GOPATH/src/Travix-International/Travix.Core.Adk
 ```
 
-### Depedencies
+### Dependencies
 
 Install the dependencies with [gvt](https://github.com/FiloSottile/gvt):
 

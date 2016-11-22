@@ -132,21 +132,6 @@ func startAuthServer(c chan bool, config Config) {
 								content: JSON.stringify(result, null, 2)
 							});
 						}
-					})
-					.catch(function (error) {
-						console.log('error', error);
-
-						// Handle Errors here.
-						var errorCode = error.code;
-						var errorMessage = error.message;
-
-						// The email of the user's account used.
-						var email = error.email;
-
-						// The firebase.auth.AuthCredential type that was used.
-						var credential = error.credential;
-
-						// ...
 					});
 				</script>
 			</head>
@@ -174,7 +159,7 @@ func startAuthServer(c chan bool, config Config) {
 			panic(writeErr)
 		}
 
-		io.WriteString(w, "File written at: "+config.AuthFilePath)
+		io.WriteString(w, "Login successful! You can close your browser tab now.")
 		c <- true
 	})
 
