@@ -28,18 +28,18 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 
 	// fetch refreshed token
 	type TokenBody struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn string `json:"expires_in"`
-		IdToken string `json:"id_token"`
-		ProjectId string `json:"project_id"`
+		AccessToken  string `json:"access_token"`
+		ExpiresIn    string `json:"expires_in"`
+		IdToken      string `json:"id_token"`
+		ProjectId    string `json:"project_id"`
 		RefreshToken string `json:"refresh_token"`
-		TokenType string `json:"token_type"`
-		UserId string `json:"user_id"`
+		TokenType    string `json:"token_type"`
+		UserId       string `json:"user_id"`
 	}
 
 	tokenClient := &http.Client{}
 	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
-	tokenReq, _ := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key=" + config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
+	tokenReq, _ := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
 	tokenReq.Header.Set("Content-Type", "application/json")
 	tokenRes, _ := tokenClient.Do(tokenReq)
 
@@ -51,24 +51,24 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 
 	// fetch profile
 	type Profile struct {
-		Email string
+		Email          string
 		FirebaseUserId string
-		Id int
-		IsEnabled bool
-		IsVerified bool
-		Name string
-		PublisherId string
+		Id             int
+		IsEnabled      bool
+		IsVerified     bool
+		Name           string
+		PublisherId    string
 	}
 
 	type ProfileBody struct {
 		HasProfile bool
-		Profile Profile
+		Profile    Profile
 	}
 
 	profileClient := &http.Client{}
-	profileReq, _ := http.NewRequest("GET", config.DeveloperProfileUrl + "/profile", nil)
+	profileReq, _ := http.NewRequest("GET", config.DeveloperProfileUrl+"/profile", nil)
 	profileReq.Header.Set("Content-Type", "application/json")
-	profileReq.Header.Set("Authorization", tokenType + " " + tokenValue)
+	profileReq.Header.Set("Authorization", tokenType+" "+tokenValue)
 	profileRes, _ := profileClient.Do(profileReq)
 
 	profileBody := ProfileBody{}

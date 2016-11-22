@@ -23,31 +23,31 @@ func createAuthFileIfNotExists(c Config) error {
 }
 
 type StsTokenManager struct {
-	ApiKey string
-	RefreshToken string
-	AccessToken string
+	ApiKey         string
+	RefreshToken   string
+	AccessToken    string
 	ExpirationTime int
 }
 
 type AuthUser struct {
-	Uid string
-	DisplayName string
-	Email string
-	EmailVerified bool
-	ApiKey string
-	AppName string
-	AuthDomain string
+	Uid             string
+	DisplayName     string
+	Email           string
+	EmailVerified   bool
+	ApiKey          string
+	AppName         string
+	AuthDomain      string
 	StsTokenManager StsTokenManager
 }
 
 type AuthCredential struct {
-	IdToken string
+	IdToken     string
 	AccessToken string
-	Provider string
+	Provider    string
 }
 
 type Auth struct {
-	User AuthUser
+	User       AuthUser
 	Credential AuthCredential
 }
 
@@ -174,9 +174,9 @@ func startAuthServer(c chan bool, config Config) {
 			panic(writeErr)
 		}
 
-		io.WriteString(w, "File written at: " + config.AuthFilePath)
+		io.WriteString(w, "File written at: "+config.AuthFilePath)
 		c <- true
 	})
 
-	http.ListenAndServe(":" + config.AuthServerPort, nil)
+	http.ListenAndServe(":"+config.AuthServerPort, nil)
 }

@@ -30,4 +30,3 @@ func executeLoginCommand(context *kingpin.ParseContext) error {
 
 	return nil
 }
-

@@ -1,21 +1,21 @@
 package main
 
 import (
-	"os/user"
 	"log"
+	"os/user"
 	"path/filepath"
 )
 
 type Config struct {
 	DirectoryPath string
-	AuthFilePath string
+	AuthFilePath  string
 
 	DeveloperProfileUrl string
 
-	FirebaseApiKey string
-	FirebaseAuthDomain string
-	FirebaseDatabaseUrl string
-	FirebaseStorageBucket string
+	FirebaseApiKey            string
+	FirebaseAuthDomain        string
+	FirebaseDatabaseUrl       string
+	FirebaseStorageBucket     string
 	FirebaseMessagingSenderId string
 
 	AuthServerPort string
@@ -31,14 +31,14 @@ func GetConfig() Config {
 
 	c := Config{
 		DirectoryPath: directoryPath,
-		AuthFilePath: filepath.Join(directoryPath, "auth.json"),
+		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
 
 		DeveloperProfileUrl: "",
 
-		FirebaseApiKey: "",
-		FirebaseAuthDomain: "",
-		FirebaseDatabaseUrl: "",
-		FirebaseStorageBucket: "",
+		FirebaseApiKey:            "",
+		FirebaseAuthDomain:        "",
+		FirebaseDatabaseUrl:       "",
+		FirebaseStorageBucket:     "",
 		FirebaseMessagingSenderId: "",
 
 		AuthServerPort: "7001",
