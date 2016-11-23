@@ -102,36 +102,21 @@ func startAuthServer(c chan bool, config Config) {
 					firebase.auth().signInWithRedirect(provider);
 				}
 
-				function postData(path, params) {
-					var method = "post";
-
-					var form = document.createElement("form");
-					form.setAttribute("method", method);
-					form.setAttribute("action", path);
-
-					for (var key in params) {
-						if (params.hasOwnProperty(key)) {
-							var hiddenField = document.createElement("input");
-
-							hiddenField.setAttribute("type", "hidden");
-							hiddenField.setAttribute("name", key);
-							hiddenField.setAttribute("value", params[key]);
-
-							form.appendChild(hiddenField);
-						}
-					}
-
-					document.body.appendChild(form);
-					form.submit();
-				}
-
 				firebase.auth().getRedirectResult()
 					.then(function (result) {
-						if (result.credential) {
-							postData('/save', {
-								content: JSON.stringify(result, null, 2)
-							});
+						if (!result.credential) {
+							return;
 						}
+
+						var formData = new FormData();
+						formData.append('content', JSON.stringify(result, null, 2));
+
+						var request = new XMLHttpRequest();
+						request.open('POST', '/save');
+						request.onload = function () {
+							window.location.href = '/success';
+						};
+						request.send(formData);
 					});
 				</script>
 			</head>
@@ -159,6 +144,10 @@ func startAuthServer(c chan bool, config Config) {
 			panic(writeErr)
 		}
 
+		io.WriteString(w, "File written to disk at: "+config.AuthFilePath)
+	})
+
+	http.HandleFunc("/success", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "Login successful! You can close your browser tab now.")
 		c <- true
 	})
