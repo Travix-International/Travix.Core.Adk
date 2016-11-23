@@ -10,6 +10,12 @@ type Config struct {
 	ParsedBuildDate time.Time
 	GitHash         string
 	Verbose         bool
+	CatalogURIs     map[string]string
+	TargetEnv       string
+	LocalFrontend   bool
+
+	// DevFileName is the name of the file which contains the appix development settings for this specific application
+	DevFileName string
 
 	DirectoryPath string
 	AuthFilePath  string

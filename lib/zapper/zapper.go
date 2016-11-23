@@ -1,4 +1,4 @@
-package main
+package zapper
 
 import (
 	"encoding/json"
@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Travix-International/Travix.Core.Adk/lib/zip"
 )
 
 func PrepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
@@ -59,7 +61,7 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 	return appPath, appName, manifestPath, nil
 }
 
-func CreateZapPackage(appPath string) (string, error) {
+func CreateZapPackage(appPath string, devFileName string, verbose bool) (string, error) {
 	tempFolder, err := ioutil.TempDir("", "appix")
 
 	if err != nil {
@@ -73,7 +75,7 @@ func CreateZapPackage(appPath string) (string, error) {
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = zipFolder(appPath, zapFile, includePathInZapFile)
+	err = zip.ZipFolder(appPath, zapFile, IncludePathInZapFile, devFileName, verbose)
 
 	if err != nil {
 		log.Println("Could not process App folder!")
@@ -83,7 +85,7 @@ func CreateZapPackage(appPath string) (string, error) {
 	return zapFile, err
 }
 
-func IncludePathInZapFile(relPath string, isDir bool) bool {
+func IncludePathInZapFile(relPath string, isDir bool, devFileName string, verbose bool) bool {
 	path := strings.ToLower(relPath)
 	canInclude := !strings.Contains(path, "/node_modules/") && // exclude node_modules
 		!strings.Contains(path, "/temp/") &&
@@ -92,7 +94,7 @@ func IncludePathInZapFile(relPath string, isDir bool) bool {
 		!strings.HasSuffix(path, ".vscode/") &&
 		!strings.HasSuffix(path, ".ds_store") &&
 		!strings.HasSuffix(path, "thumbs.db") &&
-		!strings.HasSuffix(path, DevFileName) &&
+		!strings.HasSuffix(path, devFileName) &&
 		!strings.HasSuffix(path, "desktop.ini")
 
 	if verbose {

@@ -45,7 +45,7 @@ func Register(context context.Context) {
 			}
 
 			// Scaffold
-			err = scaffold.ScaffoldNewApp(appPathAbsolute, config.Verbose)
+			err = scaffold.ScaffoldNewApp(appPathAbsolute, config.DevFileName, config.Verbose)
 			if err != nil {
 				return err
 			}

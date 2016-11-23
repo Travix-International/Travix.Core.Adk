@@ -11,7 +11,7 @@ import (
 
 // Creates a new file upload http request with optional extra params
 // Source: https://matt.aimonetti.net/posts/2013/07/01/golang-multipart-file-upload-example/
-func CreateMultiFileUploadRequest(uri string, files map[string]string, rawFields map[string]string) (*http.Request, error) {
+func CreateMultiFileUploadRequest(uri string, files map[string]string, rawFields map[string]string, verbose bool) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ZipFolder(source, target string, includePathInZipFn func(string, bool) bool) error {
+func ZipFolder(source, target string, includePathInZipFn func(string, bool, string, bool) bool, devFileName string, verbose bool) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func ZipFolder(source, target string, includePathInZipFn func(string, bool) bool
 			relPath += "/"
 		}
 
-		if !includePathInZipFn(relPath, isDir) {
+		if !includePathInZipFn(relPath, isDir, devFileName, verbose) {
 			return nil
 		}
 

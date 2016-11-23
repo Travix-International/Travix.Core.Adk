@@ -19,11 +19,8 @@ type DevelopmentSettings struct {
 	SessionID string // This would be the session ID that the user will use the push/preview his changes
 }
 
-// DevFileName is the name of the file which contains the appix development settings for this specific application
-const DevFileName = ".appixDevSettings" // Exported for blacklisting use during push/submit
-
-func ReadDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {
-	devSettingsPath := path.Join(appPath, DevFileName)
+func ReadDevelopmentSettings(appPath string, devFileName string, verbose bool) (*DevelopmentSettings, error) {
+	devSettingsPath := path.Join(appPath, devFileName)
 	if verbose {
 		log.Printf("Reading development settings from %s", devSettingsPath)
 	}
@@ -44,8 +41,8 @@ func ReadDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings
 	return &settings, nil
 }
 
-func WriteDevelopmentSettings(appPath string, settings *DevelopmentSettings, verbose bool) error {
-	devSettingsPath := path.Join(appPath, DevFileName)
+func WriteDevelopmentSettings(appPath string, devFileName string, settings *DevelopmentSettings, verbose bool) error {
+	devSettingsPath := path.Join(appPath, devFileName)
 	if verbose {
 		log.Printf("Writing development settings to %s", devSettingsPath)
 	}

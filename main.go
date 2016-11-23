@@ -14,6 +14,7 @@ import (
 
 	cmdInit "github.com/Travix-International/Travix.Core.Adk/cmd/init"
 	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
+	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
 	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
 	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/cmd/whoami"
 )
@@ -60,6 +61,10 @@ func makeConfig() modelsConfig.Config {
 		ParsedBuildDate: parsedBuildDate,
 		GitHash:         gitHash,
 		Verbose:         verbose, // @TODO: verify if it works as --verbose
+		DevFileName:     ".appixDevSettings",
+		CatalogURIs:     catalogURIs,
+		TargetEnv:       targetEnv,
+		LocalFrontend:   localFrontend,
 
 		DirectoryPath: directoryPath,
 		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
@@ -110,7 +115,7 @@ func main() {
 	cmdLogin.Register(context)
 	cmdWhoami.Register(context)
 	cmdInit.Register(context)
-	// configurePushCommand(app)
+	cmdPush.Register(context)
 	// configureSubmitCommand(app)
 	// configureWatchCommand(app)
 
