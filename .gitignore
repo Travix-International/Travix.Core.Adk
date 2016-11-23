@@ -179,3 +179,5 @@ appix.exe
 bin/appix-mac
 bin/appix
 /bin/appix-linux
+
+_old/
