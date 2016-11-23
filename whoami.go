@@ -39,9 +39,18 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 
 	tokenClient := &http.Client{}
 	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
-	tokenReq, _ := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
+	tokenReq, tokenReqErr := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
+	if tokenReqErr != nil {
+		log.Fatal(tokenReqErr)
+		return nil
+	}
+
 	tokenReq.Header.Set("Content-Type", "application/json")
-	tokenRes, _ := tokenClient.Do(tokenReq)
+	tokenRes, tokenResErr := tokenClient.Do(tokenReq)
+	if tokenResErr != nil {
+		log.Fatal(tokenResErr)
+		return nil
+	}
 
 	tokenBody := TokenBody{}
 	json.NewDecoder(tokenRes.Body).Decode(&tokenBody)
@@ -66,10 +75,19 @@ func executeWhoamiCommand(context *kingpin.ParseContext) error {
 	}
 
 	profileClient := &http.Client{}
-	profileReq, _ := http.NewRequest("GET", config.DeveloperProfileUrl+"/profile", nil)
+	profileReq, profileReqErr := http.NewRequest("GET", config.DeveloperProfileUrl+"/profile", nil)
+	if profileReqErr != nil {
+		log.Fatal(profileReqErr)
+		return nil
+	}
+
 	profileReq.Header.Set("Content-Type", "application/json")
 	profileReq.Header.Set("Authorization", tokenType+" "+tokenValue)
-	profileRes, _ := profileClient.Do(profileReq)
+	profileRes, profileResErr := profileClient.Do(profileReq)
+	if profileResErr != nil {
+		log.Fatal(profileResErr)
+		return nil
+	}
 
 	profileBody := ProfileBody{}
 	json.NewDecoder(profileRes.Body).Decode(&profileBody)
