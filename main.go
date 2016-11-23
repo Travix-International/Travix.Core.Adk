@@ -14,6 +14,7 @@ import (
 
 	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
 	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
+	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/cmd/whoami"
 )
 
 // Version numbers passed by build flags
@@ -105,7 +106,7 @@ func main() {
 	// Commands
 	cmdVersion.Register(context)
 	cmdLogin.Register(context)
-	// configureWhoamiCommand(app)
+	cmdWhoami.Register(context)
 	// configureInitCommand(app)
 	// configurePushCommand(app)
 	// configureSubmitCommand(app)
