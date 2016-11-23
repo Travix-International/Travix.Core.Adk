@@ -3,9 +3,17 @@ package main
 import (
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
+
+	modelsConfig "github.com/Travix-International/Travix.Core.Adk/models/config"
+	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+
+	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
+	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
 )
 
 // Version numbers passed by build flags
@@ -36,6 +44,37 @@ var (
 	localFrontend = false
 )
 
+func makeConfig() modelsConfig.Config {
+	user, userErr := user.Current()
+	if userErr != nil {
+		log.Fatal(userErr)
+	}
+
+	directoryPath := filepath.Join(user.HomeDir, ".appix")
+
+	config := modelsConfig.Config{
+		Version:         version,
+		BuildDate:       buildDate,
+		ParsedBuildDate: parsedBuildDate,
+		GitHash:         gitHash,
+
+		DirectoryPath: directoryPath,
+		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
+
+		DeveloperProfileUrl: travixDeveloperProfileUrl,
+
+		FirebaseApiKey:            travixFirebaseApiKey,
+		FirebaseAuthDomain:        travixFirebaseAuthDomain,
+		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
+		FirebaseStorageBucket:     travixFirebaseStorageBucket,
+		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+
+		AuthServerPort: "7001",
+	}
+
+	return config
+}
+
 func main() {
 	var err error
 	parsedBuildDate, err = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
@@ -43,6 +82,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// App
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
@@ -55,13 +95,22 @@ func main() {
 	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
 		BoolVar(&localFrontend)
 
-	configureInitCommand(app)
-	configureLoginCommand(app)
-	configurePushCommand(app)
-	configureSubmitCommand(app)
-	configureVersionCommand(app)
-	configureWatchCommand(app)
-	configureWhoamiCommand(app)
+	// Context
+	config := makeConfig()
+	context := modelsContext.Context{
+		App:    app,
+		Config: config,
+	}
 
+	// Commands
+	cmdVersion.Register(context)
+	cmdLogin.Register(context)
+	// configureWhoamiCommand(app)
+	// configureInitCommand(app)
+	// configurePushCommand(app)
+	// configureSubmitCommand(app)
+	// configureWatchCommand(app)
+
+	// kingpin config
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
