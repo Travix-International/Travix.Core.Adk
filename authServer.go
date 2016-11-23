@@ -69,7 +69,7 @@ func GetAuth(c Config) (*Auth, error) {
 	return &auth, nil
 }
 
-func startAuthServer(c chan bool, config Config) {
+func startAuthServer(c chan interface{}, config Config) {
 	firebaseConfig := `
 		<script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>
 		<script>
@@ -149,7 +149,9 @@ func startAuthServer(c chan bool, config Config) {
 
 	http.HandleFunc("/success", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "Login successful! You can close your browser tab now.")
-		c <- true
+
+		// this would close the server
+		c <- nil
 	})
 
 	http.ListenAndServe(":"+config.AuthServerPort, nil)

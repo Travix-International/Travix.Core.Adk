@@ -15,17 +15,15 @@ func executeLoginCommand(context *kingpin.ParseContext) error {
 	var config = GetConfig()
 	var url = "http://localhost:" + config.AuthServerPort
 
-	ch := make(chan bool)
+	ch := make(chan interface{})
 	go startAuthServer(ch, config)
 
 	fmt.Println("Opening url: " + url)
 	openWebsite(url)
 
 	select {
-	case shouldClose := <-ch:
-		if shouldClose {
-			fmt.Println("Closing server...")
-		}
+	case <-ch:
+		fmt.Println("Closing server...")
 	}
 
 	return nil
