@@ -1,4 +1,4 @@
-package utils
+package openUrl
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-func OpenWebsite(url string) error {
+func OpenUrl(url string) error {
 	var err error
 
 	switch runtime.GOOS {

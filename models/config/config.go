@@ -9,6 +9,7 @@ type Config struct {
 	BuildDate       string
 	ParsedBuildDate time.Time
 	GitHash         string
+	Verbose         bool
 
 	DirectoryPath string
 	AuthFilePath  string

@@ -7,7 +7,7 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
 	"github.com/Travix-International/Travix.Core.Adk/models/context"
-	"github.com/Travix-International/Travix.Core.Adk/utils"
+	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
 )
 
 func Register(context context.Context) {
@@ -21,7 +21,7 @@ func Register(context context.Context) {
 			go auth.StartServer(ch, config)
 
 			fmt.Println("Opening url: " + url)
-			utils.OpenWebsite(url)
+			openUrl.OpenUrl(url)
 
 			select {
 			case <-ch:
