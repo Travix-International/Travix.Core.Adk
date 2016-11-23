@@ -14,6 +14,13 @@ var (
 	buildDate       string
 	parsedBuildDate time.Time
 	gitHash         string
+
+	travixFirebaseApiKey            string
+	travixFirebaseAuthDomain        string
+	travixFirebaseDatabaseUrl       string
+	travixFirebaseStorageBucket     string
+	travixFirebaseMessagingSenderId string
+	travixDeveloperProfileUrl       string
 )
 
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
@@ -49,10 +56,12 @@ func main() {
 		BoolVar(&localFrontend)
 
 	configureInitCommand(app)
+	configureLoginCommand(app)
 	configurePushCommand(app)
 	configureSubmitCommand(app)
 	configureVersionCommand(app)
 	configureWatchCommand(app)
+	configureWhoamiCommand(app)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }

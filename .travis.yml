@@ -22,3 +22,6 @@ deploy:
   on:
     repo: Travix-International/Travix.Core.Adk
     tags: true # The deployment happens only if the commit has a tag.
+
+notifications:
+  email: false
