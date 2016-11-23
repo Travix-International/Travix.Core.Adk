@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ func createAuthFileIfNotExists(c modelsConfig.Config) error {
 	return nil
 }
 
+// Auth structs
 type StsTokenManager struct {
 	ApiKey         string
 	RefreshToken   string
@@ -53,6 +55,33 @@ type Auth struct {
 	Credential AuthCredential
 }
 
+// Token structs
+type TokenBody struct {
+	AccessToken  string `json:"access_token"`
+	ExpiresIn    string `json:"expires_in"`
+	IdToken      string `json:"id_token"`
+	ProjectId    string `json:"project_id"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	UserId       string `json:"user_id"`
+}
+
+// Profile structs
+type Profile struct {
+	Email          string
+	FirebaseUserId string
+	Id             int
+	IsEnabled      bool
+	IsVerified     bool
+	Name           string
+	PublisherId    string
+}
+
+type ProfileBody struct {
+	HasProfile bool
+	Profile    Profile
+}
+
 func GetAuth(c modelsConfig.Config) (*Auth, error) {
 	content, readErr := ioutil.ReadFile(c.AuthFilePath)
 	if readErr != nil {
@@ -69,6 +98,49 @@ func GetAuth(c modelsConfig.Config) (*Auth, error) {
 	}
 
 	return &auth, nil
+}
+
+func FetchRefreshedToken(config modelsConfig.Config, refreshToken string) (TokenBody, error) {
+	tokenClient := &http.Client{}
+	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
+	tokenReq, tokenReqErr := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
+	if tokenReqErr != nil {
+		return TokenBody{}, tokenReqErr
+	}
+
+	tokenReq.Header.Set("Content-Type", "application/json")
+	tokenRes, tokenResErr := tokenClient.Do(tokenReq)
+	if tokenResErr != nil {
+		return TokenBody{}, tokenResErr
+	}
+
+	tokenBody := TokenBody{}
+	json.NewDecoder(tokenRes.Body).Decode(&tokenBody)
+
+	return tokenBody, nil
+}
+
+func FetchDeveloperProfile(config modelsConfig.Config, tokenBody TokenBody) (ProfileBody, error) {
+	tokenType := tokenBody.TokenType
+	tokenValue := tokenBody.IdToken
+
+	profileClient := &http.Client{}
+	profileReq, profileReqErr := http.NewRequest("GET", config.DeveloperProfileUrl+"/profile", nil)
+	if profileReqErr != nil {
+		return ProfileBody{}, profileReqErr
+	}
+
+	profileReq.Header.Set("Content-Type", "application/json")
+	profileReq.Header.Set("Authorization", tokenType+" "+tokenValue)
+	profileRes, profileResErr := profileClient.Do(profileReq)
+	if profileResErr != nil {
+		return ProfileBody{}, profileResErr
+	}
+
+	profileBody := ProfileBody{}
+	json.NewDecoder(profileRes.Body).Decode(&profileBody)
+
+	return profileBody, nil
 }
 
 func StartServer(c chan interface{}, config modelsConfig.Config) {
