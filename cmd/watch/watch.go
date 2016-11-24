@@ -1,7 +1,6 @@
 package watch
 
 import (
-	"fmt"
 	"log"
 	"path"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"github.com/rjeczalik/notify"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
 	"github.com/Travix-International/Travix.Core.Adk/models/context"
 )
@@ -47,26 +47,22 @@ var (
 )
 
 func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
-	fmt.Println("doPush now...")
+	pushCmd := &cmdPush.PushCommand{}
 
-	// @TODO: do actual push
-	//
-	// pushCmd := &PushCommand{}
+	pushCmd.AppPath = appPath
+	pushCmd.NoPolling = false
+	pushCmd.WaitInSeconds = 180
+	pushCmd.NoBrowser = !openBrowser
 
-	// pushCmd.appPath = appPath
-	// pushCmd.noPolling = false
-	// pushCmd.waitInSeconds = 180
-	// pushCmd.noBrowser = !openBrowser
+	pushCmd.Push(context)
 
-	// pushCmd.push(context.App)
+	if !openBrowser {
+		livereload.SendReload()
+	}
 
-	// if !openBrowser {
-	// 	livereload.SendReload()
-	// }
-
-	// if pushDone != nil {
-	// 	*(pushDone) <- 0
-	// }
+	if pushDone != nil {
+		*(pushDone) <- 0
+	}
 }
 
 func Register(context context.Context) {

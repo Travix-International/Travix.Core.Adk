@@ -20,10 +20,10 @@ import (
 
 // PushCommand used for pushing an app during app development
 type PushCommand struct {
-	appPath       string // path to the App folder
-	noPolling     bool   // skip polling flag
-	noBrowser     bool   // skip opening the site in the browser
-	waitInSeconds int    // polling timeout
+	AppPath       string // path to the App folder
+	NoPolling     bool   // skip polling flag
+	NoBrowser     bool   // skip opening the site in the browser
+	WaitInSeconds int    // polling timeout
 }
 
 type bundleMessage struct {
@@ -50,103 +50,107 @@ const (
 )
 
 func Register(context context.Context) {
-	config := context.Config
-
 	cmd := &PushCommand{}
 	command := context.App.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			appPath := cmd.appPath
-			pollingEnabled := !cmd.noPolling
-			openBrowser := !cmd.noBrowser
-			waitInSeconds := cmd.waitInSeconds
-			devFileName := context.Config.DevFileName
-
-			appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.appPath)
-
-			if err != nil {
-				log.Println("Could not prepare the app folder for uploading")
-				return err
-			}
-
-			zapFile, err := zapper.CreateZapPackage(appPath, devFileName, context.Config.Verbose)
-
-			if err != nil {
-				log.Println("Could not create zap package.")
-				return err
-			}
-
-			sessionID, err := getSessionID(appPath, devFileName, config.Verbose)
-
-			if err != nil {
-				log.Println("Could not get the session id.")
-				return err
-			}
-
-			log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
-
-			rootURI := config.CatalogURIs[config.TargetEnv]
-			pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
-
-			uploadURI, err := pushToCatalog(pushURI, appManifestFile, config.Verbose)
-
-			if config.LocalFrontend {
-				log.Println("Ignoring URL and substituting local front-end URL instead.")
-				reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
-				if err != nil {
-					log.Println(err)
-					return err
-				}
-
-				uploadURI = reg.ReplaceAllString(uploadURI, "http://localhost:3001$2")
-			}
-
-			if err != nil {
-				log.Println("Error during pushing the manifest to the App Catalog.")
-				return err
-			}
-
-			log.Println("Frontend upload url:", uploadURI)
-
-			pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, config.Verbose)
-
-			log.Println("Frontend upload poll uri:", pollURI)
-
-			if err != nil {
-				log.Println("Error. during uploading package to the frontend")
-				return err
-			}
-
-			if pollingEnabled {
-				doPolling(pollURI, waitInSeconds, openBrowser, config.Verbose)
-			} else {
-				log.Println("Polling not enabled")
-				log.Println("NOTE: The --noPolling will be removed in a future version.")
-				log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
-			}
-
-			if config.Verbose {
-				log.Println("Push command has completed")
-			}
-
-			return nil
+			return cmd.Push(context)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
 		Default(".").
-		ExistingDirVar(&cmd.appPath)
+		ExistingDirVar(&cmd.AppPath)
 
 	command.Flag("noPolling", "DEPRECATED: Appix won't wait for the bundling of the app to be finished.").
 		Default("false").
-		BoolVar(&cmd.noPolling)
+		BoolVar(&cmd.NoPolling)
 
 	command.Flag("noBrowser", "Appix won't open the frontend in the browser.").
 		Default("false").
-		BoolVar(&cmd.noBrowser)
+		BoolVar(&cmd.NoBrowser)
 
 	command.Flag("wait", "The maximum time appix waits for the app bundling to be finished.").
 		Short('w').
 		Default("180").
-		IntVar(&cmd.waitInSeconds)
+		IntVar(&cmd.WaitInSeconds)
+}
+
+func (cmd *PushCommand) Push(context context.Context) error {
+	config := context.Config
+
+	appPath := cmd.AppPath
+	pollingEnabled := !cmd.NoPolling
+	openBrowser := !cmd.NoBrowser
+	waitInSeconds := cmd.WaitInSeconds
+	devFileName := context.Config.DevFileName
+
+	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath)
+
+	if err != nil {
+		log.Println("Could not prepare the app folder for uploading")
+		return err
+	}
+
+	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, context.Config.Verbose)
+
+	if err != nil {
+		log.Println("Could not create zap package.")
+		return err
+	}
+
+	sessionID, err := getSessionID(appPath, devFileName, config.Verbose)
+
+	if err != nil {
+		log.Println("Could not get the session id.")
+		return err
+	}
+
+	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
+
+	rootURI := config.CatalogURIs[config.TargetEnv]
+	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
+
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, config.Verbose)
+
+	if config.LocalFrontend {
+		log.Println("Ignoring URL and substituting local front-end URL instead.")
+		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		uploadURI = reg.ReplaceAllString(uploadURI, "http://localhost:3001$2")
+	}
+
+	if err != nil {
+		log.Println("Error during pushing the manifest to the App Catalog.")
+		return err
+	}
+
+	log.Println("Frontend upload url:", uploadURI)
+
+	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, config.Verbose)
+
+	log.Println("Frontend upload poll uri:", pollURI)
+
+	if err != nil {
+		log.Println("Error. during uploading package to the frontend")
+		return err
+	}
+
+	if pollingEnabled {
+		doPolling(pollURI, waitInSeconds, openBrowser, config.Verbose)
+	} else {
+		log.Println("Polling not enabled")
+		log.Println("NOTE: The --noPolling will be removed in a future version.")
+		log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
+	}
+
+	if config.Verbose {
+		log.Println("Push command has completed")
+	}
+
+	return nil
 }
 
 func doPolling(pollURI string, waitInSeconds int, openBrowser bool, verbose bool) {
