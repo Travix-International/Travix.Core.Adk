@@ -26,6 +26,7 @@ func Register(context context.Context) {
 			select {
 			case <-ch:
 				fmt.Println("Closing server...")
+				close(ch)
 			}
 
 			return nil
