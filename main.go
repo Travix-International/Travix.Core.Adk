@@ -15,6 +15,7 @@ import (
 	cmdInit "github.com/Travix-International/Travix.Core.Adk/cmd/init"
 	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
 	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
+	cmdSubmit "github.com/Travix-International/Travix.Core.Adk/cmd/submit"
 	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
 	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/cmd/whoami"
 )
@@ -116,7 +117,7 @@ func main() {
 	cmdWhoami.Register(context)
 	cmdInit.Register(context)
 	cmdPush.Register(context)
-	// configureSubmitCommand(app)
+	cmdSubmit.Register(context)
 	// configureWatchCommand(app)
 
 	// kingpin config
