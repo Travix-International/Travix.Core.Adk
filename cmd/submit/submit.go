@@ -26,6 +26,7 @@ type submitResponse struct {
 }
 
 func Register(context context.Context) {
+	context.RequireUserLoggedIn("submit")
 	config := context.Config
 	cmd := &SubmitCommand{}
 
@@ -71,11 +72,17 @@ func Register(context context.Context) {
 				return err
 			}
 
+			request.Header.Set("Authorization", "Bearer "+context.Auth.User.StsTokenManager.AccessToken)
+
 			client := &http.Client{}
 			response, err := client.Do(request)
 			if err != nil {
 				log.Println("Call to App Catalog failed!")
 				return err
+			}
+
+			if response.StatusCode == 401 || response.StatusCode == 403 {
+				return fmt.Errorf("User is not authorized. App Catalog returned status code %v", response.StatusCode)
 			}
 
 			responseBody, err := ioutil.ReadAll(response.Body)
@@ -116,8 +123,6 @@ func Register(context context.Context) {
 			} else {
 				return fmt.Errorf("Submit failed, App Catalog returned statuscode %v", response.StatusCode)
 			}
-
-			return nil
 
 			return nil
 		}).

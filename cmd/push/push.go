@@ -11,6 +11,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
@@ -75,6 +76,7 @@ func Register(context context.Context) {
 }
 
 func (cmd *PushCommand) Push(context context.Context) error {
+	context.RequireUserLoggedIn("push")
 	config := context.Config
 
 	appPath := cmd.AppPath
@@ -109,7 +111,7 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	rootURI := config.CatalogURIs[config.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := pushToCatalog(pushURI, appManifestFile, config.Verbose)
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, context.Auth, config.Verbose)
 
 	if config.LocalFrontend {
 		log.Println("Ignoring URL and substituting local front-end URL instead.")
@@ -241,7 +243,7 @@ func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollRespon
 	return done
 }
 
-func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (uploadURI string, err error) {
+func pushToCatalog(pushURI string, appManifestFile string, auth *auth.Auth, verbose bool) (uploadURI string, err error) {
 	// To the App Catalog we have to POST the manifest in a multipart HTTP form.
 	// When doing the push, it'll only contain a single file, the manifest.
 	files := map[string]string{
@@ -253,6 +255,7 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (upload
 	}
 
 	request, err := upload.CreateMultiFileUploadRequest(pushURI, files, nil, verbose)
+	request.Header.Set("Authorization", "Bearer "+auth.User.StsTokenManager.AccessToken)
 
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
@@ -264,6 +267,10 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (upload
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
 		return "", err
+	}
+
+	if response.StatusCode == 401 || response.StatusCode == 403 {
+		return "", fmt.Errorf("User is not authorized. App Catalog returned status code %v", response.StatusCode)
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)
