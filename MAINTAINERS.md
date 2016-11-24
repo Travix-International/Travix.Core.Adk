@@ -42,7 +42,7 @@ $ gem install github_changelog_generator
 Now you can generate `CHANGELOG.md` file automatically by running:
 
 ```
-$ github_changelog_generator -t "YOUR_GITHUB_TOKEN"
+$ make changelog GITHUB_API_TOKEN="YOUR_GITHUB_TOKEN"
 ```
 
 You can generate a token [here](https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token)
