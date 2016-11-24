@@ -13,7 +13,7 @@ import (
 	modelsConfig "github.com/Travix-International/Travix.Core.Adk/models/config"
 )
 
-func createAuthFileIfNotExists(c modelsConfig.Config) error {
+func createAuthFileIfNotExists(c *modelsConfig.Config) error {
 	var _, statErr = os.Stat(c.AuthFilePath)
 	if os.IsNotExist(statErr) {
 		fmt.Println("File does not exist, creating...")
@@ -82,7 +82,7 @@ type ProfileBody struct {
 	Profile    Profile
 }
 
-func GetAuth(c modelsConfig.Config) (*Auth, error) {
+func GetAuth(c *modelsConfig.Config) (*Auth, error) {
 	content, readErr := ioutil.ReadFile(c.AuthFilePath)
 	if readErr != nil {
 		log.Printf("Failed to read auth file %s", c.AuthFilePath)
@@ -100,7 +100,7 @@ func GetAuth(c modelsConfig.Config) (*Auth, error) {
 	return &auth, nil
 }
 
-func FetchRefreshedToken(config modelsConfig.Config, refreshToken string) (TokenBody, error) {
+func FetchRefreshedToken(config *modelsConfig.Config, refreshToken string) (TokenBody, error) {
 	tokenClient := &http.Client{}
 	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
 	tokenReq, tokenReqErr := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+config.FirebaseApiKey, bytes.NewBuffer(tokenReqPayload))
@@ -120,7 +120,7 @@ func FetchRefreshedToken(config modelsConfig.Config, refreshToken string) (Token
 	return tokenBody, nil
 }
 
-func FetchDeveloperProfile(config modelsConfig.Config, tokenBody TokenBody) (ProfileBody, error) {
+func FetchDeveloperProfile(config *modelsConfig.Config, tokenBody TokenBody) (ProfileBody, error) {
 	tokenType := tokenBody.TokenType
 	tokenValue := tokenBody.IdToken
 
@@ -143,7 +143,7 @@ func FetchDeveloperProfile(config modelsConfig.Config, tokenBody TokenBody) (Pro
 	return profileBody, nil
 }
 
-func StartServer(c chan interface{}, config modelsConfig.Config) {
+func StartServer(c chan interface{}, config *modelsConfig.Config) {
 	firebaseConfig := `
 		<script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>
 		<script>

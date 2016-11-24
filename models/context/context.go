@@ -8,5 +8,5 @@ import (
 
 type Context struct {
 	App    *kingpin.Application
-	Config modelsConfig.Config
+	Config *modelsConfig.Config
 }

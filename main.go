@@ -92,34 +92,36 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Config
+	config := makeConfig()
+
 	// App
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
 		Default("prod").
-		EnumVar(&targetEnv, "local", "dev", "staging", "prod")
+		EnumVar(&config.TargetEnv, "local", "dev", "staging", "prod")
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
-		BoolVar(&verbose)
+		BoolVar(&config.Verbose)
 
 	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
-		BoolVar(&localFrontend)
+		BoolVar(&config.LocalFrontend)
 
 	// Context
-	config := makeConfig()
 	context := modelsContext.Context{
 		App:    app,
-		Config: config,
+		Config: &config,
 	}
 
 	// Commands
-	cmdVersion.Register(context)
-	cmdLogin.Register(context)
-	cmdWhoami.Register(context)
 	cmdInit.Register(context)
+	cmdLogin.Register(context)
 	cmdPush.Register(context)
 	cmdSubmit.Register(context)
+	cmdVersion.Register(context)
 	cmdWatch.Register(context)
+	cmdWhoami.Register(context)
 
 	// kingpin config
 	kingpin.MustParse(app.Parse(os.Args[1:]))

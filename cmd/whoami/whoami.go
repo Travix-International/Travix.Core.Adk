@@ -23,6 +23,9 @@ func Register(context modelsContext.Context) {
 			}
 
 			// fetch refreshed token
+			if config.Verbose {
+				log.Println("Fetching refreshed token...")
+			}
 			refreshToken := auth.User.StsTokenManager.RefreshToken
 			tokenBody, tokenBodyErr := libAuth.FetchRefreshedToken(config, refreshToken)
 			if tokenBodyErr != nil {
@@ -31,6 +34,9 @@ func Register(context modelsContext.Context) {
 			}
 
 			// fetch profile
+			if config.Verbose {
+				log.Println("Fetching developer profile...")
+			}
 			profileBody, profileBodyErr := libAuth.FetchDeveloperProfile(config, tokenBody)
 			if profileBodyErr != nil {
 				log.Fatal(profileBodyErr)
