@@ -3,9 +3,22 @@ package main
 import (
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
+
+	modelsConfig "github.com/Travix-International/Travix.Core.Adk/models/config"
+	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+
+	cmdInit "github.com/Travix-International/Travix.Core.Adk/cmd/init"
+	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
+	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
+	cmdSubmit "github.com/Travix-International/Travix.Core.Adk/cmd/submit"
+	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
+	cmdWatch "github.com/Travix-International/Travix.Core.Adk/cmd/watch"
+	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/cmd/whoami"
 )
 
 // Version numbers passed by build flags
@@ -36,6 +49,42 @@ var (
 	localFrontend = false
 )
 
+func makeConfig() modelsConfig.Config {
+	user, userErr := user.Current()
+	if userErr != nil {
+		log.Fatal(userErr)
+	}
+
+	directoryPath := filepath.Join(user.HomeDir, ".appix")
+
+	config := modelsConfig.Config{
+		Version:         version,
+		BuildDate:       buildDate,
+		ParsedBuildDate: parsedBuildDate,
+		GitHash:         gitHash,
+		Verbose:         verbose, // @TODO: verify if it works as --verbose
+		DevFileName:     ".appixDevSettings",
+		CatalogURIs:     catalogURIs,
+		TargetEnv:       targetEnv,
+		LocalFrontend:   localFrontend,
+
+		DirectoryPath: directoryPath,
+		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
+
+		DeveloperProfileUrl: travixDeveloperProfileUrl,
+
+		FirebaseApiKey:            travixFirebaseApiKey,
+		FirebaseAuthDomain:        travixFirebaseAuthDomain,
+		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
+		FirebaseStorageBucket:     travixFirebaseStorageBucket,
+		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+
+		AuthServerPort: "7001",
+	}
+
+	return config
+}
+
 func main() {
 	var err error
 	parsedBuildDate, err = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
@@ -43,25 +92,37 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Config
+	config := makeConfig()
+
+	// App
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
 	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
 		Default("prod").
-		EnumVar(&targetEnv, "local", "dev", "staging", "prod")
+		EnumVar(&config.TargetEnv, "local", "dev", "staging", "prod")
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
-		BoolVar(&verbose)
+		BoolVar(&config.Verbose)
 
 	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
-		BoolVar(&localFrontend)
+		BoolVar(&config.LocalFrontend)
 
-	configureInitCommand(app)
-	configureLoginCommand(app)
-	configurePushCommand(app)
-	configureSubmitCommand(app)
-	configureVersionCommand(app)
-	configureWatchCommand(app)
-	configureWhoamiCommand(app)
+	// Context
+	context := modelsContext.Context{
+		App:    app,
+		Config: &config,
+	}
 
+	// Commands
+	cmdInit.Register(context)
+	cmdLogin.Register(context)
+	cmdPush.Register(context)
+	cmdSubmit.Register(context)
+	cmdVersion.Register(context)
+	cmdWatch.Register(context)
+	cmdWhoami.Register(context)
+
+	// kingpin config
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
