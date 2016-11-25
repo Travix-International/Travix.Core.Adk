@@ -82,6 +82,31 @@ type ProfileBody struct {
 	Profile    Profile
 }
 
+func (p ProfileBody) String() string {
+	if p.HasProfile {
+		buf := bytes.Buffer
+
+		buf.WriteString(fmt.Sprintln("Email: " + p.Profile.Email))
+		buf.WriteString(fmt.Sprintln("Name: " + p.Profile.Name))
+
+		if p.Profile.IsEnabled == true {
+			buf.WriteString(fmt.Sprintln("Enabled: Yes"))
+		} else {
+			buf.WriteString(fmt.Sprintln("Enabled: No"))
+		}
+
+		if p.Profile.IsVerified == true {
+			buf.WriteString(fmt.Sprintln("Verified: Yes"))
+		} else {
+			buf.WriteString(fmt.Sprintln("Verified: No"))
+		}
+
+		buf.WriteString(fmt.Sprintln("Publisher ID: " + p.Profile.PublisherId))
+		return buf.String()
+	}
+	return "No profile found."
+}
+
 func GetAuth(c *modelsConfig.Config) (*Auth, error) {
 	content, readErr := ioutil.ReadFile(c.AuthFilePath)
 	if readErr != nil {

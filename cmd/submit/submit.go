@@ -1,6 +1,7 @@
 package submit
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 )
 
 // SubmitCommand used for submitting Apps
@@ -25,11 +26,15 @@ type submitResponse struct {
 	Links    map[string]string
 }
 
-func Register(context context.Context) {
-	config := context.Config
-	cmd := &SubmitCommand{}
+const submitTemplateURI = "%s/files/publish/%s"
 
-	const submitTemplateURI = "%s/files/publish/%s"
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
+	cmd := &SubmitCommand{}
 
 	command := context.App.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {

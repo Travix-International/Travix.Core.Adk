@@ -1,4 +1,4 @@
-package openUrl
+package utils
 
 import (
 	"os/exec"

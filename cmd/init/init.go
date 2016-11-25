@@ -1,25 +1,33 @@
 package version
 
 import (
+	"context"
 	"log"
 	"path/filepath"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/scaffold"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
-	"github.com/Travix-International/Travix.Core.Adk/utils/isEmptyPath"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	"github.com/Travix-International/Travix.Core.Adk/utils"
 )
+
+const CONTEXTKEY int = 1
 
 type InitCommand struct {
 	appPath string // Path to where the app will be placed after the scaffold has taken place
 }
 
-func Register(context context.Context) {
-	config := context.Config
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
+
 	cmd := &InitCommand{}
 
-	command := context.App.Command("init", "Scaffold a new application into the specified folder").
+	command := ctxVal.App.Command("init", "Scaffold a new application into the specified folder").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// grab the absolute path
 			appPathRelative := cmd.appPath
@@ -38,7 +46,7 @@ func Register(context context.Context) {
 
 			// First we'll check to see if the directory is empty. It's purely for safety purposes, to ensure we don't overwrite
 			// anyting special. The command line handling has already validated that the folder actually exists
-			isEmptyPath, err := isEmptyPath.IsEmptyPath(appPathAbsolute)
+			isEmptyPath, err := utils.IsEmptyPath(appPathAbsolute)
 			if !isEmptyPath || err != nil {
 				log.Printf("The specified appPath '%s' does not appear to be an empty directory\n%v", appPathRelative, err)
 				return err
