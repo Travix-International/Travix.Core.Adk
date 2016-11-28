@@ -9,10 +9,15 @@ import (
 	"github.com/rjeczalik/notify"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
+	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	cmdPush "github.com/Travix-International/Travix.Core.Adk/lib/cmd/push"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
 )
+
+type WatchCommand struct {
+	*cmd.Command
+}
 
 // This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
 //
@@ -65,9 +70,7 @@ func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
 	}
 }
 
-func Register(context context.Context) {
-	config := context.Config
-
+func (cmd *WatchCommand) Register(context context.Context) {
 	command := context.App.Command("watch", "Watches the current directory for changes, and pushes on any change.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// Channel on which we get file change events.
@@ -101,7 +104,7 @@ func Register(context context.Context) {
 			for {
 				select {
 				case ei := <-fileWatch:
-					if config.Verbose {
+					if cmd.Verbose {
 						log.Println("File change event details:", ei)
 					}
 

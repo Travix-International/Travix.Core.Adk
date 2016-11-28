@@ -9,13 +9,15 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
 )
 
 // SubmitCommand used for submitting Apps
 type SubmitCommand struct {
+	*cmd.Command
 	appPath     string // path to the App folder
 	environment string // environment (default: dev)
 }
@@ -25,10 +27,9 @@ type submitResponse struct {
 	Links    map[string]string
 }
 
-func Register(context context.Context) {
+func (cmd *SubmitCommand) Register(context context.Context) {
 	context.RequireUserLoggedIn("submit")
 	config := context.Config
-	cmd := &SubmitCommand{}
 
 	const submitTemplateURI = "%s/files/publish/%s"
 
@@ -47,7 +48,7 @@ func Register(context context.Context) {
 				return err
 			}
 
-			zapFile, err := zapper.CreateZapPackage(appPath, config.DevFileName, config.Verbose)
+			zapFile, err := zapper.CreateZapPackage(appPath, config.DevFileName, cmd.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")
@@ -56,23 +57,23 @@ func Register(context context.Context) {
 
 			log.Printf("Run submit for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
-			rootURI := config.CatalogURIs[config.TargetEnv]
+			rootURI := config.CatalogURIs[cmd.TargetEnv]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 			files := map[string]string{
 				"manifest": appManifestFile,
 				"zapfile":  zapFile,
 			}
 
-			if config.Verbose {
+			if cmd.Verbose {
 				log.Println("Posting files to App Catalog: " + submitURI)
 			}
-			request, err := upload.CreateMultiFileUploadRequest(submitURI, files, nil, config.Verbose)
+			request, err := upload.CreateMultiFileUploadRequest(submitURI, files, nil, cmd.Verbose)
 			if err != nil {
 				log.Println("Call to App Catalog failed!")
 				return err
 			}
 
-			request.Header.Set("Authorization", "Bearer "+context.Auth.User.StsTokenManager.AccessToken)
+			request.Header.Set("Authorization", context.AuthToken.TokenType+" "+context.AuthToken.IdToken)
 
 			client := &http.Client{}
 			response, err := client.Do(request)
@@ -94,7 +95,7 @@ func Register(context context.Context) {
 			var responseObject submitResponse
 			err = json.Unmarshal(responseBody, &responseObject)
 			if err != nil {
-				if config.Verbose {
+				if cmd.Verbose {
 					log.Println(err)
 				}
 
@@ -107,7 +108,7 @@ func Register(context context.Context) {
 				log.Printf("\t%v\n", line)
 			}
 
-			if config.Verbose {
+			if cmd.Verbose {
 				for key, val := range responseObject.Links {
 					log.Printf("\tLINK: %s\t\t%s", key, val)
 				}

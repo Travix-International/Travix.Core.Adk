@@ -9,16 +9,17 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	modelsConfig "github.com/Travix-International/Travix.Core.Adk/models/config"
-	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/config"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 
-	cmdInit "github.com/Travix-International/Travix.Core.Adk/cmd/init"
-	cmdLogin "github.com/Travix-International/Travix.Core.Adk/cmd/login"
-	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
-	cmdSubmit "github.com/Travix-International/Travix.Core.Adk/cmd/submit"
-	cmdVersion "github.com/Travix-International/Travix.Core.Adk/cmd/version"
-	cmdWatch "github.com/Travix-International/Travix.Core.Adk/cmd/watch"
-	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/cmd/whoami"
+	cmd "github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	cmdInit "github.com/Travix-International/Travix.Core.Adk/lib/cmd/init"
+	cmdLogin "github.com/Travix-International/Travix.Core.Adk/lib/cmd/login"
+	cmdPush "github.com/Travix-International/Travix.Core.Adk/lib/cmd/push"
+	cmdSubmit "github.com/Travix-International/Travix.Core.Adk/lib/cmd/submit"
+	cmdVersion "github.com/Travix-International/Travix.Core.Adk/lib/cmd/version"
+	cmdWatch "github.com/Travix-International/Travix.Core.Adk/lib/cmd/watch"
+	cmdWhoami "github.com/Travix-International/Travix.Core.Adk/lib/cmd/whoami"
 )
 
 // Version numbers passed by build flags
@@ -49,7 +50,54 @@ var (
 	localFrontend = false
 )
 
-func makeConfig() modelsConfig.Config {
+func main() {
+	var err error
+	parsedBuildDate, err = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	command := &cmd.Command{}
+
+	// App
+	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
+
+	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
+		Default("prod").
+		EnumVar(&command.TargetEnv, "local", "dev", "staging", "prod")
+	app.Flag("verbose", "Verbose mode.").
+		Short('v').
+		BoolVar(&command.Verbose)
+
+	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
+		BoolVar(&command.LocalFrontend)
+
+	// Context
+	config := makeConfig()
+	context := context.Context{
+		App:    app,
+		Config: config,
+	}
+
+	commands := [...]cmd.Registrable{
+		&cmdInit.InitCommand{Command: command},
+		&cmdLogin.LoginCommand{Command: command},
+		&cmdPush.PushCommand{Command: command},
+		&cmdSubmit.SubmitCommand{Command: command},
+		&cmdVersion.VersionCommand{Command: command},
+		&cmdWatch.WatchCommand{Command: command},
+		&cmdWhoami.WhoamiCommand{Command: command},
+	}
+
+	for _, c := range commands {
+		c.Register(context)
+	}
+
+	// kingpin config
+	kingpin.MustParse(app.Parse(os.Args[1:]))
+}
+
+func makeConfig() *config.Config {
 	user, userErr := user.Current()
 	if userErr != nil {
 		log.Fatal(userErr)
@@ -57,16 +105,13 @@ func makeConfig() modelsConfig.Config {
 
 	directoryPath := filepath.Join(user.HomeDir, ".appix")
 
-	config := modelsConfig.Config{
+	config := &config.Config{
 		Version:         version,
 		BuildDate:       buildDate,
 		ParsedBuildDate: parsedBuildDate,
 		GitHash:         gitHash,
-		Verbose:         verbose, // @TODO: verify if it works as --verbose
 		DevFileName:     ".appixDevSettings",
 		CatalogURIs:     catalogURIs,
-		TargetEnv:       targetEnv,
-		LocalFrontend:   localFrontend,
 
 		DirectoryPath: directoryPath,
 		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
@@ -83,46 +128,4 @@ func makeConfig() modelsConfig.Config {
 	}
 
 	return config
-}
-
-func main() {
-	var err error
-	parsedBuildDate, err = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Config
-	config := makeConfig()
-
-	// App
-	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
-
-	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
-		Default("prod").
-		EnumVar(&config.TargetEnv, "local", "dev", "staging", "prod")
-	app.Flag("verbose", "Verbose mode.").
-		Short('v').
-		BoolVar(&config.Verbose)
-
-	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
-		BoolVar(&config.LocalFrontend)
-
-	// Context
-	context := modelsContext.Context{
-		App:    app,
-		Config: &config,
-	}
-
-	// Commands
-	cmdInit.Register(context)
-	cmdLogin.Register(context)
-	cmdPush.Register(context)
-	cmdSubmit.Register(context)
-	cmdVersion.Register(context)
-	cmdWatch.Register(context)
-	cmdWhoami.Register(context)
-
-	// kingpin config
-	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
