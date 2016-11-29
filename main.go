@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/user"
@@ -9,7 +10,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	modelsConfig "github.com/Travix-International/Travix.Core.Adk/models/config"
+	config "github.com/Travix-International/Travix.Core.Adk/models/config"
 	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 
 	cmdInit "github.com/Travix-International/Travix.Core.Adk/cmd/init"
@@ -49,7 +50,7 @@ var (
 	localFrontend = false
 )
 
-func makeConfig() modelsConfig.Config {
+func makeConfig() config.Config {
 	user, userErr := user.Current()
 	if userErr != nil {
 		log.Fatal(userErr)
@@ -57,33 +58,35 @@ func makeConfig() modelsConfig.Config {
 
 	directoryPath := filepath.Join(user.HomeDir, ".appix")
 
-	config := modelsConfig.Config{
-		Version:         version,
-		BuildDate:       buildDate,
-		ParsedBuildDate: parsedBuildDate,
-		GitHash:         gitHash,
-		Verbose:         verbose, // @TODO: verify if it works as --verbose
-		DevFileName:     ".appixDevSettings",
-		CatalogURIs:     catalogURIs,
-		TargetEnv:       targetEnv,
-		LocalFrontend:   localFrontend,
+	config := config.New(
+		version,
+		buildDate,
+		parsedBuildDate,
+		gitHash,
+		verbose, // @TODO: verify if it works as --verbose
+		".appixDevSettings",
+		catalogURIs,
+		targetEnv,
+		localFrontend,
 
-		DirectoryPath: directoryPath,
-		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
+		directoryPath,
+		filepath.Join(directoryPath, "auth.json"),
 
-		DeveloperProfileUrl: travixDeveloperProfileUrl,
+		travixDeveloperProfileUrl,
 
-		FirebaseApiKey:            travixFirebaseApiKey,
-		FirebaseAuthDomain:        travixFirebaseAuthDomain,
-		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
-		FirebaseStorageBucket:     travixFirebaseStorageBucket,
-		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+		travixFirebaseApiKey,
+		travixFirebaseAuthDomain,
+		travixFirebaseDatabaseUrl,
+		travixFirebaseStorageBucket,
+		travixFirebaseMessagingSenderId,
 
-		AuthServerPort: "7001",
-	}
+		"7001",
+	)
 
 	return config
 }
+
+const CONTEXTKEY int = 1
 
 func main() {
 	var err error
@@ -109,19 +112,21 @@ func main() {
 		BoolVar(&config.LocalFrontend)
 
 	// Context
-	context := modelsContext.Context{
-		App:    app,
-		Config: &config,
-	}
+	ctx := context.WithValue(context.Background(), CONTEXTKEY, modelsContext.Context{app, &config})
+
+	// modelsContext.Context{
+	// 	App:    app,
+	// 	Config: &config,
+	// }
 
 	// Commands
-	cmdInit.Register(context)
-	cmdLogin.Register(context)
-	cmdPush.Register(context)
-	cmdSubmit.Register(context)
-	cmdVersion.Register(context)
-	cmdWatch.Register(context)
-	cmdWhoami.Register(context)
+	cmdInit.Register(ctx)
+	cmdLogin.Register(ctx)
+	cmdPush.Register(ctx)
+	cmdSubmit.Register(ctx)
+	cmdVersion.Register(ctx)
+	cmdWatch.Register(ctx)
+	cmdWhoami.Register(ctx)
 
 	// kingpin config
 	kingpin.MustParse(app.Parse(os.Args[1:]))

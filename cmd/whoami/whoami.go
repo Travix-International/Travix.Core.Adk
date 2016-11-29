@@ -1,22 +1,29 @@
 package whoami
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	libAuth "github.com/Travix-International/Travix.Core.Adk/lib/auth"
-	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 )
 
-func Register(context modelsContext.Context) {
-	config := context.Config
+const CONTEXTKEY int = 1
+
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
 
 	context.App.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// get locally stored auth info
-			auth, authErr := libAuth.GetAuth(config)
+			auth, authErr := auth.GetAuth(config)
 			if authErr != nil {
 				log.Fatal(authErr)
 				return nil
@@ -27,7 +34,7 @@ func Register(context modelsContext.Context) {
 				log.Println("Fetching refreshed token...")
 			}
 			refreshToken := auth.User.StsTokenManager.RefreshToken
-			tokenBody, tokenBodyErr := libAuth.FetchRefreshedToken(config, refreshToken)
+			tokenBody, tokenBodyErr := auth.FetchRefreshedToken(config, refreshToken)
 			if tokenBodyErr != nil {
 				log.Fatal(tokenBodyErr)
 				return nil
@@ -37,32 +44,13 @@ func Register(context modelsContext.Context) {
 			if config.Verbose {
 				log.Println("Fetching developer profile...")
 			}
-			profileBody, profileBodyErr := libAuth.FetchDeveloperProfile(config, tokenBody)
-			if profileBodyErr != nil {
-				log.Fatal(profileBodyErr)
+			body, err := auth.FetchDeveloperProfile(config, tokenBody)
+			if err != nil {
+				log.Fatal(err)
 				return nil
 			}
 
-			if profileBody.HasProfile {
-				fmt.Println("Email: " + profileBody.Profile.Email)
-				fmt.Println("Name: " + profileBody.Profile.Name)
-
-				if profileBody.Profile.IsEnabled == true {
-					fmt.Println("Enabled: Yes")
-				} else {
-					fmt.Println("Enabled: No")
-				}
-
-				if profileBody.Profile.IsVerified == true {
-					fmt.Println("Verified: Yes")
-				} else {
-					fmt.Println("Verified: No")
-				}
-
-				fmt.Println("Publisher ID: " + profileBody.Profile.PublisherId)
-			} else {
-				fmt.Println("No profile found.")
-			}
+			fmt.Println(body)
 
 			return nil
 		})

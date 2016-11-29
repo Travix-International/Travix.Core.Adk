@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"context"
 	"log"
 	"path"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 
 	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 )
 
 // This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
@@ -65,8 +66,12 @@ func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
 	}
 }
 
-func Register(context context.Context) {
-	config := context.Config
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
 
 	command := context.App.Command("watch", "Watches the current directory for changes, and pushes on any change.").
 		Action(func(parseContext *kingpin.ParseContext) error {

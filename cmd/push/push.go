@@ -1,7 +1,9 @@
 package push
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,7 +16,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
 )
 
@@ -49,11 +51,17 @@ const (
 	pollFailedStatus   = "FAILED"
 )
 
-func Register(context context.Context) {
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
+
 	cmd := &PushCommand{}
-	command := context.App.Command("push", "Push the App in the specified folder.").
+	command := ctxVal.App.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return cmd.Push(context)
+			return cmd.Push(ctx)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
@@ -74,8 +82,12 @@ func Register(context context.Context) {
 		IntVar(&cmd.WaitInSeconds)
 }
 
-func (cmd *PushCommand) Push(context context.Context) error {
-	config := context.Config
+func (cmd *PushCommand) Push(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		return errors.New("General context failure")
+	}
+	config := ctxVal.Config
 
 	appPath := cmd.AppPath
 	pollingEnabled := !cmd.NoPolling

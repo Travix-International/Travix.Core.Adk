@@ -1,4 +1,4 @@
-package isEmptyPath
+package utils
 
 import (
 	"io"

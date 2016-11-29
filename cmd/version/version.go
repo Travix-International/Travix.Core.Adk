@@ -1,15 +1,20 @@
 package version
 
 import (
+	"context"
 	"log"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
+	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
 )
 
-func Register(context context.Context) {
-	config := context.Config
+func Register(ctx context.Context) {
+	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
+	if err != nil {
+		log.Errorln("General context failure")
+	}
+	config := ctxVal.Config
 
 	context.App.Command("version", "Displays version information").
 		Action(func(parseContext *kingpin.ParseContext) error {
