@@ -11,15 +11,18 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
+	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
 	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
 )
 
 // PushCommand used for pushing an app during app development
 type PushCommand struct {
+	*cmd.Command
 	AppPath       string // path to the App folder
 	NoPolling     bool   // skip polling flag
 	NoBrowser     bool   // skip opening the site in the browser
@@ -49,8 +52,7 @@ const (
 	pollFailedStatus   = "FAILED"
 )
 
-func Register(context context.Context) {
-	cmd := &PushCommand{}
+func (cmd *PushCommand) Register(context context.Context) {
 	command := context.App.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			return cmd.Push(context)
@@ -75,6 +77,7 @@ func Register(context context.Context) {
 }
 
 func (cmd *PushCommand) Push(context context.Context) error {
+	context.RequireUserLoggedIn("push")
 	config := context.Config
 
 	appPath := cmd.AppPath
@@ -90,14 +93,14 @@ func (cmd *PushCommand) Push(context context.Context) error {
 		return err
 	}
 
-	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, context.Config.Verbose)
+	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, devFileName, config.Verbose)
+	sessionID, err := getSessionID(appPath, devFileName, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not get the session id.")
@@ -106,12 +109,12 @@ func (cmd *PushCommand) Push(context context.Context) error {
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	rootURI := config.CatalogURIs[config.TargetEnv]
+	rootURI := config.CatalogURIs[cmd.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := pushToCatalog(pushURI, appManifestFile, config.Verbose)
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, context.AuthToken, cmd.Verbose)
 
-	if config.LocalFrontend {
+	if cmd.LocalFrontend {
 		log.Println("Ignoring URL and substituting local front-end URL instead.")
 		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
 		if err != nil {
@@ -129,7 +132,7 @@ func (cmd *PushCommand) Push(context context.Context) error {
 
 	log.Println("Frontend upload url:", uploadURI)
 
-	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, config.Verbose)
+	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, cmd.Verbose)
 
 	log.Println("Frontend upload poll uri:", pollURI)
 
@@ -139,14 +142,14 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	}
 
 	if pollingEnabled {
-		doPolling(pollURI, waitInSeconds, openBrowser, config.Verbose)
+		doPolling(pollURI, waitInSeconds, openBrowser, cmd.Verbose)
 	} else {
 		log.Println("Polling not enabled")
 		log.Println("NOTE: The --noPolling will be removed in a future version.")
 		log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
 	}
 
-	if config.Verbose {
+	if cmd.Verbose {
 		log.Println("Push command has completed")
 	}
 
@@ -241,7 +244,7 @@ func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollRespon
 	return done
 }
 
-func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (uploadURI string, err error) {
+func pushToCatalog(pushURI string, appManifestFile string, token *auth.TokenBody, verbose bool) (uploadURI string, err error) {
 	// To the App Catalog we have to POST the manifest in a multipart HTTP form.
 	// When doing the push, it'll only contain a single file, the manifest.
 	files := map[string]string{
@@ -253,6 +256,7 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (upload
 	}
 
 	request, err := upload.CreateMultiFileUploadRequest(pushURI, files, nil, verbose)
+	request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
 
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
@@ -264,6 +268,10 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool) (upload
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
 		return "", err
+	}
+
+	if response.StatusCode == 401 || response.StatusCode == 403 {
+		return "", fmt.Errorf("User is not authorized. App Catalog returned status code %v", response.StatusCode)
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)

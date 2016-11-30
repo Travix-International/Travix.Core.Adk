@@ -5,10 +5,15 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/Travix-International/Travix.Core.Adk/models/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 )
 
-func Register(context context.Context) {
+type VersionCommand struct {
+	*cmd.Command
+}
+
+func (cmd *VersionCommand) Register(context context.Context) {
 	config := context.Config
 
 	context.App.Command("version", "Displays version information").

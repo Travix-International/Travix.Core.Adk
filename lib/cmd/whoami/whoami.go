@@ -7,37 +7,41 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	libAuth "github.com/Travix-International/Travix.Core.Adk/lib/auth"
-	modelsContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
+	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 )
 
-func Register(context modelsContext.Context) {
+type WhoamiCommand struct {
+	*cmd.Command
+}
+
+func (cmd *WhoamiCommand) Register(context context.Context) {
 	config := context.Config
 
 	context.App.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// get locally stored auth info
-			auth, authErr := libAuth.GetAuth(config)
+			auth, authErr := libAuth.GetAuthData(config.AuthFilePath)
 			if authErr != nil {
 				log.Fatal(authErr)
 				return nil
 			}
 
 			// fetch refreshed token
-			if config.Verbose {
+			if cmd.Verbose {
 				log.Println("Fetching refreshed token...")
 			}
-			refreshToken := auth.User.StsTokenManager.RefreshToken
-			tokenBody, tokenBodyErr := libAuth.FetchRefreshedToken(config, refreshToken)
+			tokenBody, tokenBodyErr := auth.RefreshToken(config.FirebaseApiKey)
 			if tokenBodyErr != nil {
 				log.Fatal(tokenBodyErr)
 				return nil
 			}
 
 			// fetch profile
-			if config.Verbose {
+			if cmd.Verbose {
 				log.Println("Fetching developer profile...")
 			}
-			profileBody, profileBodyErr := libAuth.FetchDeveloperProfile(config, tokenBody)
+			profileBody, profileBodyErr := tokenBody.FetchDeveloperProfile(config.DeveloperProfileUrl)
 			if profileBodyErr != nil {
 				log.Fatal(profileBodyErr)
 				return nil
