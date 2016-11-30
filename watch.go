@@ -1,7 +1,6 @@
-package watch
+package main
 
 import (
-	"context"
 	"log"
 	"path"
 	"path/filepath"
@@ -10,9 +9,8 @@ import (
 	"github.com/rjeczalik/notify"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	cmdPush "github.com/Travix-International/Travix.Core.Adk/cmd/push"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
-	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	config "github.com/Travix-International/Travix.Core.Adk/models/config"
 )
 
 // This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
@@ -47,40 +45,61 @@ var (
 	watcherState = waiting
 )
 
-func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
-	pushCmd := &cmdPush.PushCommand{}
+type pushCommand int
 
-	pushCmd.AppPath = appPath
-	pushCmd.NoPolling = false
-	pushCmd.WaitInSeconds = 180
-	pushCmd.NoBrowser = !openBrowser
+const (
+	pushOpenBrowser pushCommand = iota
+	pushDontOpenBrowser
+	pushDone
+)
 
-	pushCmd.Push(context)
+// TODO: REALLY RAW IMPLEMENTATION! Needs worker pool pattern
+func pusherController(cfg *config.Config, pushStatus chan bool) chan pushCommand {
+	ch := make(chan int)
 
-	if !openBrowser {
-		livereload.SendReload()
-	}
+	go func() {
+	Done:
+		for {
+			select {
+			case cmd := <-command:
+				pushCmd := &PushCommand{}
 
-	if pushDone != nil {
-		*(pushDone) <- 0
-	}
+				pushCmd.AppPath = appPath
+				pushCmd.NoPolling = false
+				pushCmd.WaitInSeconds = 180
+
+				switch cmd {
+				case pushOpenBrowser:
+					pushCmd.NoBrowser = true
+					pushCmd.Push(cfg)
+
+				case pushDonOpenBrowser:
+					pushCmd.NoBrowser = false
+					pushCmd.Push(cfg)
+					livereload.SendReload()
+
+				case pushDone:
+					break Done
+				}
+			}
+			pushStatus <- true
+		}
+	}()
+
+	return ch
 }
 
-func Register(ctx context.Context) {
-	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
-	if err != nil {
-		log.Errorln("General context failure")
-	}
-	config := ctxVal.Config
-
-	command := context.App.Command("watch", "Watches the current directory for changes, and pushes on any change.").
+func registerWatch(app *kingpin.Application, cfg *config.Config) {
+	command := app.Command("watch", "Watches the current directory for changes, and pushes on any change.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// Channel on which we get file change events.
 			fileWatch := make(chan notify.EventInfo)
 			// Channel on which we get an event when the initial short delay after a change is passed.
 			initialDelayDone := make(chan int)
 			// Channel on which we get events when the pushes are done.
-			pushDone := make(chan int)
+			pushStatus := make(chan bool)
+			// Channel to control the pushing
+			controller := pusherController(cfg, pushStatus)
 
 			// NOTE: We need to convert to absolute path, because the file watcher wouldn't accept relative paths on Windows.
 			absPath, err := filepath.Abs(appPath)
@@ -98,7 +117,7 @@ func Register(ctx context.Context) {
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(context, true, nil)
+			controller <- pushOpenBrowser
 
 			livereload.SendReload()
 
@@ -106,7 +125,7 @@ func Register(ctx context.Context) {
 			for {
 				select {
 				case ei := <-fileWatch:
-					if config.Verbose {
+					if cfg.Verbose {
 						log.Println("File change event details:", ei)
 					}
 
@@ -123,13 +142,12 @@ func Register(ctx context.Context) {
 					watcherState = pushing
 
 					log.Println("File change detected, executing appix push.")
-
-					go doPush(context, false, &pushDone)
-				case <-pushDone:
+					controller <- pushDontOpenBrowser
+				case <-pushStatus:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(context, false, &pushDone)
+						controller <- pushDontOpenBrowser
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")

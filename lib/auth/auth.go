@@ -2,9 +2,9 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -84,7 +84,7 @@ type ProfileBody struct {
 
 func (p ProfileBody) String() string {
 	if p.HasProfile {
-		buf := bytes.Buffer
+		var buf bytes.Buffer
 
 		buf.WriteString(fmt.Sprintln("Email: " + p.Profile.Email))
 		buf.WriteString(fmt.Sprintln("Name: " + p.Profile.Name))
@@ -168,7 +168,7 @@ func FetchDeveloperProfile(config *modelsConfig.Config, tokenBody TokenBody) (Pr
 	return profileBody, nil
 }
 
-func StartServer(c chan interface{}, config *modelsConfig.Config) {
+func StartServer(config *modelsConfig.Config) (url string, ch <-chan struct{}) {
 	firebaseConfig := `
 		<script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>
 		<script>
@@ -188,6 +188,11 @@ func StartServer(c chan interface{}, config *modelsConfig.Config) {
 			'login_hint': 'user@travix.com'
 		});
 		</script>`
+
+	url = "http://localhost:" + config.AuthServerPort
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch = ctx.Done()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		html := `
@@ -227,7 +232,7 @@ func StartServer(c chan interface{}, config *modelsConfig.Config) {
 			</body>
 		</html>`
 
-		io.WriteString(w, html)
+		fmt.Fprint(w, html)
 	})
 
 	http.HandleFunc("/save", func(w http.ResponseWriter, r *http.Request) {
@@ -243,15 +248,18 @@ func StartServer(c chan interface{}, config *modelsConfig.Config) {
 			panic(writeErr)
 		}
 
-		io.WriteString(w, "File written to disk at: "+config.AuthFilePath)
+		fmt.Fprintf(w, "File written to disk at: %s", config.AuthFilePath)
 	})
 
 	http.HandleFunc("/success", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "Login successful! You can close your browser tab now.")
-
-		// this would close the server
-		c <- nil
+		fmt.Fprint(w, "Login successful! You can close your browser tab now.")
+		fmt.Println("Closing server...")
+		cancel()
 	})
 
-	http.ListenAndServe(":"+config.AuthServerPort, nil)
+	go func() {
+		http.ListenAndServe(":"+config.AuthServerPort, nil)
+	}()
+
+	return
 }

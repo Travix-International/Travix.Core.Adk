@@ -1,33 +1,25 @@
-package version
+package main
 
 import (
-	"context"
 	"log"
 	"path/filepath"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/scaffold"
-	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
-	"github.com/Travix-International/Travix.Core.Adk/utils"
-)
 
-const CONTEXTKEY int = 1
+	"github.com/Travix-International/Travix.Core.Adk/utils"
+
+	config "github.com/Travix-International/Travix.Core.Adk/models/config"
+)
 
 type InitCommand struct {
 	appPath string // Path to where the app will be placed after the scaffold has taken place
 }
 
-func Register(ctx context.Context) {
-	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
-	if err != nil {
-		log.Errorln("General context failure")
-	}
-	config := ctxVal.Config
-
+func registerInit(app *kingpin.Application, cfg *config.Config) {
 	cmd := &InitCommand{}
-
-	command := ctxVal.App.Command("init", "Scaffold a new application into the specified folder").
+	command := app.Command("init", "Scaffold a new application into the specified folder").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// grab the absolute path
 			appPathRelative := cmd.appPath
@@ -39,7 +31,7 @@ func Register(ctx context.Context) {
 
 			// tell the user what we're planning on doing
 			log.Print("Initializing new application")
-			if config.Verbose {
+			if cfg.Verbose {
 				log.Printf("Specified appPath to be %s", appPathRelative)
 				log.Printf("Absolute appPath is %s", appPathAbsolute)
 			}
@@ -53,7 +45,7 @@ func Register(ctx context.Context) {
 			}
 
 			// Scaffold
-			err = scaffold.ScaffoldNewApp(appPathAbsolute, config.DevFileName, config.Verbose)
+			err = scaffold.ScaffoldNewApp(appPathAbsolute, cfg.DevFileName, cfg.Verbose)
 			if err != nil {
 				return err
 			}

@@ -1,9 +1,7 @@
-package push
+package main
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,8 +14,8 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
-	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
+	config "github.com/Travix-International/Travix.Core.Adk/models/config"
+	"github.com/Travix-International/Travix.Core.Adk/utils"
 )
 
 // PushCommand used for pushing an app during app development
@@ -51,17 +49,11 @@ const (
 	pollFailedStatus   = "FAILED"
 )
 
-func Register(ctx context.Context) {
-	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
-	if err != nil {
-		log.Errorln("General context failure")
-	}
-	config := ctxVal.Config
-
+func registerPush(app *kingpin.Application, cfg *config.Config) {
 	cmd := &PushCommand{}
-	command := ctxVal.App.Command("push", "Push the App in the specified folder.").
+	command := app.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return cmd.Push(ctx)
+			return cmd.Push(cfg)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
@@ -82,18 +74,12 @@ func Register(ctx context.Context) {
 		IntVar(&cmd.WaitInSeconds)
 }
 
-func (cmd *PushCommand) Push(ctx context.Context) {
-	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
-	if err != nil {
-		return errors.New("General context failure")
-	}
-	config := ctxVal.Config
-
+func (cmd *PushCommand) Push(cfg *config.Config) {
 	appPath := cmd.AppPath
 	pollingEnabled := !cmd.NoPolling
 	openBrowser := !cmd.NoBrowser
 	waitInSeconds := cmd.WaitInSeconds
-	devFileName := context.Config.DevFileName
+	devFileName := cfg.DevFileName
 
 	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath)
 
@@ -102,14 +88,14 @@ func (cmd *PushCommand) Push(ctx context.Context) {
 		return err
 	}
 
-	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, context.Config.Verbose)
+	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, cfg.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, devFileName, config.Verbose)
+	sessionID, err := getSessionID(appPath, devFileName, cfg.Verbose)
 
 	if err != nil {
 		log.Println("Could not get the session id.")
@@ -118,12 +104,12 @@ func (cmd *PushCommand) Push(ctx context.Context) {
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	rootURI := config.CatalogURIs[config.TargetEnv]
+	rootURI := cfg.CatalogURIs[cfg.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := pushToCatalog(pushURI, appManifestFile, config.Verbose)
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, cfg.Verbose)
 
-	if config.LocalFrontend {
+	if cfg.LocalFrontend {
 		log.Println("Ignoring URL and substituting local front-end URL instead.")
 		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
 		if err != nil {
@@ -141,7 +127,7 @@ func (cmd *PushCommand) Push(ctx context.Context) {
 
 	log.Println("Frontend upload url:", uploadURI)
 
-	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, config.Verbose)
+	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, cfg.Verbose)
 
 	log.Println("Frontend upload poll uri:", pollURI)
 
@@ -151,14 +137,14 @@ func (cmd *PushCommand) Push(ctx context.Context) {
 	}
 
 	if pollingEnabled {
-		doPolling(pollURI, waitInSeconds, openBrowser, config.Verbose)
+		doPolling(pollURI, waitInSeconds, openBrowser, cfg.Verbose)
 	} else {
 		log.Println("Polling not enabled")
 		log.Println("NOTE: The --noPolling will be removed in a future version.")
 		log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
 	}
 
-	if config.Verbose {
+	if cfg.Verbose {
 		log.Println("Push command has completed")
 	}
 
@@ -190,7 +176,7 @@ func doPolling(pollURI string, waitInSeconds int, openBrowser bool, verbose bool
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 			if openBrowser {
-				openUrl.OpenUrl(statusResponse.Links.Preview)
+				utils.OpenUrl(statusResponse.Links.Preview)
 			}
 		} else {
 			log.Printf("App push failed.")

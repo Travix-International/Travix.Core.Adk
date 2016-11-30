@@ -1,7 +1,6 @@
-package submit
+package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,7 +11,7 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	appContext "github.com/Travix-International/Travix.Core.Adk/models/context"
+	config "github.com/Travix-International/Travix.Core.Adk/models/config"
 )
 
 // SubmitCommand used for submitting Apps
@@ -28,15 +27,10 @@ type submitResponse struct {
 
 const submitTemplateURI = "%s/files/publish/%s"
 
-func Register(ctx context.Context) {
-	ctxVal, err := ctx.Value(CONTEXTKEY).(appContext.Context)
-	if err != nil {
-		log.Errorln("General context failure")
-	}
-	config := ctxVal.Config
+func registerSubmit(app *kingpin.Application, cfg *config.Config) {
 	cmd := &SubmitCommand{}
 
-	command := context.App.Command("submit", "Submits the App for review.").
+	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			environment := cmd.environment
 
@@ -51,7 +45,7 @@ func Register(ctx context.Context) {
 				return err
 			}
 
-			zapFile, err := zapper.CreateZapPackage(appPath, config.DevFileName, config.Verbose)
+			zapFile, err := zapper.CreateZapPackage(appPath, cfg.DevFileName, cfg.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")
@@ -60,17 +54,17 @@ func Register(ctx context.Context) {
 
 			log.Printf("Run submit for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
-			rootURI := config.CatalogURIs[config.TargetEnv]
+			rootURI := cfg.CatalogURIs[cfg.TargetEnv]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 			files := map[string]string{
 				"manifest": appManifestFile,
 				"zapfile":  zapFile,
 			}
 
-			if config.Verbose {
+			if cfg.Verbose {
 				log.Println("Posting files to App Catalog: " + submitURI)
 			}
-			request, err := upload.CreateMultiFileUploadRequest(submitURI, files, nil, config.Verbose)
+			request, err := upload.CreateMultiFileUploadRequest(submitURI, files, nil, cfg.Verbose)
 			if err != nil {
 				log.Println("Call to App Catalog failed!")
 				return err
@@ -92,7 +86,7 @@ func Register(ctx context.Context) {
 			var responseObject submitResponse
 			err = json.Unmarshal(responseBody, &responseObject)
 			if err != nil {
-				if config.Verbose {
+				if cfg.Verbose {
 					log.Println(err)
 				}
 
@@ -105,7 +99,7 @@ func Register(ctx context.Context) {
 				log.Printf("\t%v\n", line)
 			}
 
-			if config.Verbose {
+			if cfg.Verbose {
 				for key, val := range responseObject.Links {
 					log.Printf("\tLINK: %s\t\t%s", key, val)
 				}
