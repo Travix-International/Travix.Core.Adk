@@ -74,7 +74,7 @@ func registerPush(app *kingpin.Application, cfg *config.Config) {
 		IntVar(&cmd.WaitInSeconds)
 }
 
-func (cmd *PushCommand) Push(cfg *config.Config) {
+func (cmd *PushCommand) Push(cfg *config.Config) error {
 	appPath := cmd.AppPath
 	pollingEnabled := !cmd.NoPolling
 	openBrowser := !cmd.NoBrowser

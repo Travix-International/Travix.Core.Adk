@@ -55,13 +55,13 @@ const (
 
 // TODO: REALLY RAW IMPLEMENTATION! Needs worker pool pattern
 func pusherController(cfg *config.Config, pushStatus chan bool) chan pushCommand {
-	ch := make(chan int)
+	ch := make(chan pushCommand)
 
 	go func() {
 	Done:
 		for {
 			select {
-			case cmd := <-command:
+			case cmd := <-ch:
 				pushCmd := &PushCommand{}
 
 				pushCmd.AppPath = appPath
@@ -73,7 +73,7 @@ func pusherController(cfg *config.Config, pushStatus chan bool) chan pushCommand
 					pushCmd.NoBrowser = true
 					pushCmd.Push(cfg)
 
-				case pushDonOpenBrowser:
+				case pushDontOpenBrowser:
 					pushCmd.NoBrowser = false
 					pushCmd.Push(cfg)
 					livereload.SendReload()

@@ -14,7 +14,7 @@ func registerWhoAmI(app *kingpin.Application, cfg *config.Config) {
 	app.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// get locally stored auth info
-			auth, authErr := auth.GetAuth(cfg)
+			authInfo, authErr := auth.GetAuth(cfg)
 			if authErr != nil {
 				log.Fatal(authErr)
 				return nil
@@ -24,7 +24,7 @@ func registerWhoAmI(app *kingpin.Application, cfg *config.Config) {
 			if cfg.Verbose {
 				log.Println("Fetching refreshed token...")
 			}
-			refreshToken := auth.User.StsTokenManager.RefreshToken
+			refreshToken := authInfo.User.StsTokenManager.RefreshToken
 			tokenBody, tokenBodyErr := auth.FetchRefreshedToken(cfg, refreshToken)
 			if tokenBodyErr != nil {
 				log.Fatal(tokenBodyErr)
