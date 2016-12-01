@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (tokenBody *TokenBody) FetchDeveloperProfile(developerProfileUrl string) (ProfileBody, error) {
+func FetchDeveloperProfile(tokenBody *TokenBody, developerProfileUrl string) (ProfileBody, error) {
 	tokenType := tokenBody.TokenType
 	tokenValue := tokenBody.IdToken
 

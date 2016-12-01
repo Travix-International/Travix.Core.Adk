@@ -6,6 +6,7 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 )
@@ -26,7 +27,7 @@ func (cmd *WhoamiCommand) Register(context context.Context) {
 			if cmd.Verbose {
 				log.Println("Fetching developer profile...")
 			}
-			profileBody, profileBodyErr := authToken.FetchDeveloperProfile(config.DeveloperProfileUrl)
+			profileBody, profileBodyErr := auth.FetchDeveloperProfile(authToken, config.DeveloperProfileUrl)
 			if profileBodyErr != nil {
 				log.Fatal(profileBodyErr)
 				return nil
