@@ -6,7 +6,6 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
-	libAuth "github.com/Travix-International/Travix.Core.Adk/lib/auth"
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 )
@@ -20,22 +19,8 @@ func (cmd *WhoamiCommand) Register(context context.Context) {
 
 	context.App.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			// get locally stored auth info
-			auth, authErr := libAuth.GetAuthData(config.AuthFilePath)
-			if authErr != nil {
-				log.Fatal(authErr)
-				return nil
-			}
-
-			// fetch refreshed token
-			if cmd.Verbose {
-				log.Println("Fetching refreshed token...")
-			}
-			tokenBody, tokenBodyErr := auth.RefreshToken(config.FirebaseApiKey)
-			if tokenBodyErr != nil {
-				log.Fatal(tokenBodyErr)
-				return nil
-			}
+			context.RequireUserLoggedIn("whoami")
+			tokenBody := context.AuthToken
 
 			// fetch profile
 			if cmd.Verbose {
