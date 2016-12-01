@@ -20,13 +20,13 @@ func (cmd *WhoamiCommand) Register(context context.Context) {
 	context.App.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			context.RequireUserLoggedIn("whoami")
-			tokenBody := context.AuthToken
+			authToken := context.AuthToken
 
 			// fetch profile
 			if cmd.Verbose {
 				log.Println("Fetching developer profile...")
 			}
-			profileBody, profileBodyErr := tokenBody.FetchDeveloperProfile(config.DeveloperProfileUrl)
+			profileBody, profileBodyErr := authToken.FetchDeveloperProfile(config.DeveloperProfileUrl)
 			if profileBodyErr != nil {
 				log.Fatal(profileBodyErr)
 				return nil
