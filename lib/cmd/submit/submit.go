@@ -28,13 +28,12 @@ type submitResponse struct {
 }
 
 func (cmd *SubmitCommand) Register(context context.Context) {
-	context.RequireUserLoggedIn("submit")
 	config := context.Config
-
 	const submitTemplateURI = "%s/files/publish/%s"
 
 	command := context.App.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
+			context.RequireUserLoggedIn("submit")
 			environment := cmd.environment
 
 			if environment == "" {
