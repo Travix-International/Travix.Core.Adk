@@ -20,6 +20,23 @@ export TRAVIX_DEVELOPER_PROFILE_URL=""
 
 You can set them here: [https://travis-ci.org/Travix-International/Travix.Core.Adk/settings](https://travis-ci.org/Travix-International/Travix.Core.Adk/settings)
 
+## Releases
+
+Our Travis pipeline automatically releases a new version if we tag a commit. The version number is going to be the value of the tag.
+
+We are using semantic versioning, so the version number is set manually. When we want to release, have to decide on the [next version number](https://github.com/Travix-International/Travix.Core.Adk/releases).  
+To publish a new release, push a new tag to the commit you want to release (typically after merging a PR to master).
+
+```
+$ git checkout master
+$ git pull origin master
+
+$ git tag 1.4.2
+$ git push origin master --tags
+```
+
+After pushing the tag, Travis will pick it up automatically, and deploy it to [GitHub Releases](https://github.com/Travix-International/Travix.Core.Adk/releases), from which our install scripts always pick up the latest version.
+
 ## Changelogs
 
 Changelogs are generated using the `github_changelog_generator` gem.
