@@ -30,7 +30,7 @@ func (cmd *LoginCommand) Register(context context.Context) {
 
 			select {
 			case <-done:
-				fmt.Println("Closing server...")
+				fmt.Println("Login done!")
 				close(done)
 			}
 

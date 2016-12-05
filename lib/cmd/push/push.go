@@ -11,7 +11,6 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
@@ -77,7 +76,6 @@ func (cmd *PushCommand) Register(context context.Context) {
 }
 
 func (cmd *PushCommand) Push(context context.Context) error {
-	context.RequireUserLoggedIn("push")
 	config := context.Config
 
 	appPath := cmd.AppPath
@@ -112,7 +110,12 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	rootURI := config.CatalogURIs[cmd.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := pushToCatalog(pushURI, appManifestFile, context.AuthToken, cmd.Verbose)
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, cmd.Verbose, context)
+
+	if err != nil {
+		log.Println("Error during pushing the manifest to the App Catalog.")
+		return err
+	}
 
 	if cmd.LocalFrontend {
 		log.Println("Ignoring URL and substituting local front-end URL instead.")
@@ -123,11 +126,6 @@ func (cmd *PushCommand) Push(context context.Context) error {
 		}
 
 		uploadURI = reg.ReplaceAllString(uploadURI, "http://localhost:3001$2")
-	}
-
-	if err != nil {
-		log.Println("Error during pushing the manifest to the App Catalog.")
-		return err
 	}
 
 	log.Println("Frontend upload url:", uploadURI)
@@ -244,7 +242,7 @@ func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollRespon
 	return done
 }
 
-func pushToCatalog(pushURI string, appManifestFile string, token *auth.TokenBody, verbose bool) (uploadURI string, err error) {
+func pushToCatalog(pushURI string, appManifestFile string, verbose bool, context context.Context) (uploadURI string, err error) {
 	// To the App Catalog we have to POST the manifest in a multipart HTTP form.
 	// When doing the push, it'll only contain a single file, the manifest.
 	files := map[string]string{
@@ -256,11 +254,18 @@ func pushToCatalog(pushURI string, appManifestFile string, token *auth.TokenBody
 	}
 
 	request, err := upload.CreateMultiFileUploadRequest(pushURI, files, nil, verbose)
-	request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
 
 	if err != nil {
 		log.Println("Creating the HTTP request failed.")
 		return "", err
+	}
+
+	token, err := context.LoadAuthToken()
+
+	if err == nil {
+		request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
+	} else {
+		log.Println("WARNING: You are not logged in. In a future version authentication will be mandatory.\nYou can log in using \"appix login\".")
 	}
 
 	client := &http.Client{}
@@ -271,7 +276,8 @@ func pushToCatalog(pushURI string, appManifestFile string, token *auth.TokenBody
 	}
 
 	if response.StatusCode == 401 || response.StatusCode == 403 {
-		return "", fmt.Errorf("User is not authorized. App Catalog returned status code %v", response.StatusCode)
+		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
+		return "", fmt.Errorf("Authentication error")
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)

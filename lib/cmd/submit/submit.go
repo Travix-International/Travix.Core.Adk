@@ -33,7 +33,8 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 
 	command := context.App.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			context.RequireUserLoggedIn("submit")
+			context.LoadAuthToken()
+
 			environment := cmd.environment
 
 			if environment == "" {
@@ -72,7 +73,13 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 				return err
 			}
 
-			request.Header.Set("Authorization", context.AuthToken.TokenType+" "+context.AuthToken.IdToken)
+			token, err := context.LoadAuthToken()
+
+			if err == nil {
+				request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
+			} else {
+				log.Println("WARNING: You are not logged in. In a future version authentication will be mandatory.\nYou can log in using \"appix login\".")
+			}
 
 			client := &http.Client{}
 			response, err := client.Do(request)
@@ -82,7 +89,8 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 			}
 
 			if response.StatusCode == 401 || response.StatusCode == 403 {
-				return fmt.Errorf("User is not authorized. App Catalog returned status code %v", response.StatusCode)
+				log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
+				return fmt.Errorf("Authentication error")
 			}
 
 			responseBody, err := ioutil.ReadAll(response.Body)
