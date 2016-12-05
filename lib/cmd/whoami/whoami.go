@@ -20,8 +20,12 @@ func (cmd *WhoamiCommand) Register(context context.Context) {
 
 	context.App.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			context.RequireUserLoggedIn("whoami")
-			authToken := context.AuthToken
+			authToken, err := context.LoadAuthToken()
+
+			if err != nil {
+				fmt.Println("You are not logged in.\nYou can sign in by using 'appix login'.")
+				return nil
+			}
 
 			// fetch profile
 			if cmd.Verbose {
