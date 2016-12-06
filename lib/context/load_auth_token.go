@@ -1,6 +1,10 @@
 package context
 
-import "github.com/Travix-International/Travix.Core.Adk/lib/auth"
+import (
+	"time"
+
+	"github.com/Travix-International/Travix.Core.Adk/lib/auth"
+)
 
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.
@@ -12,7 +16,21 @@ func (context *Context) LoadAuthToken() (auth.TokenBody, error) {
 		return auth.TokenBody{}, err
 	}
 
-	authToken, err := refreshTokenOrExit(authData, firebaseAPIKey)
+	if len(authData.Token.IdToken) > 0 && authData.Token.ExpiresAt.Sub(time.Now().UTC()) > time.Duration(5)*time.Minute {
+		// If we already have a token, and there is more then 5 minutes until its expiry, we return it.
+		return authData.Token, nil
+	}
+
+	// Either we don't have a token yet, or it's expired (or close to expiry), so we get a new token.
+	authToken, err := refreshToken(authData, firebaseAPIKey)
+
+	if err != nil {
+		return auth.TokenBody{}, err
+	}
+
+	authData.Token = authToken
+
+	err = auth.SaveAuthData(context.Config.AuthFilePath, authData)
 
 	if err != nil {
 		return auth.TokenBody{}, err
@@ -22,11 +40,11 @@ func (context *Context) LoadAuthToken() (auth.TokenBody, error) {
 }
 
 func getAuthData(authFilePath string) (authResult *auth.AuthData, err error) {
-	authResult, err = auth.GetAuthData(authFilePath)
+	authResult, err = auth.ReadAuthData(authFilePath)
 	return authResult, err
 }
 
-func refreshTokenOrExit(a *auth.AuthData, firebaseAPIKey string) (auth.TokenBody, error) {
+func refreshToken(a *auth.AuthData, firebaseAPIKey string) (auth.TokenBody, error) {
 	tokenBody, err := a.RefreshToken(firebaseAPIKey)
 	return tokenBody, err
 }

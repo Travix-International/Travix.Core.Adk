@@ -56,6 +56,7 @@ func (cmd *WhoamiCommand) Register(context context.Context) {
 				fmt.Println("Publisher ID: " + profileBody.Profile.PublisherId)
 			} else {
 				fmt.Println("No profile found.")
+				fmt.Println("Please log in at https://developerportal.travix.com/ to create a developer profile.")
 			}
 
 			return nil
