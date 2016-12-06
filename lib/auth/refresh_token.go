@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 func (auth *AuthData) RefreshToken(firebaseApiKey string) (TokenBody, error) {
@@ -24,6 +26,10 @@ func (auth *AuthData) RefreshToken(firebaseApiKey string) (TokenBody, error) {
 
 	tokenBody := TokenBody{}
 	json.NewDecoder(tokenRes.Body).Decode(&tokenBody)
+
+	// The api only returns the ExpiresIn field, but in later stages we need to know the actual Time when it is expiring.
+	expiresIn, _ := strconv.Atoi(tokenBody.ExpiresIn)
+	tokenBody.ExpiresAt = time.Now().UTC().Add(time.Duration(expiresIn) * time.Second)
 
 	return tokenBody, nil
 }

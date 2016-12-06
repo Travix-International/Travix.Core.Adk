@@ -1,5 +1,7 @@
 package auth
 
+import "time"
+
 // Auth structs
 type StsTokenManager struct {
 	ApiKey         string
@@ -28,17 +30,19 @@ type AuthCredential struct {
 type AuthData struct {
 	User       AuthUser
 	Credential AuthCredential
+	Token      TokenBody
 }
 
 // Token structs
 type TokenBody struct {
-	AccessToken  string `json:"access_token"`
-	ExpiresIn    string `json:"expires_in"`
-	IdToken      string `json:"id_token"`
-	ProjectId    string `json:"project_id"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	UserId       string `json:"user_id"`
+	AccessToken  string    `json:"access_token"`
+	ExpiresIn    string    `json:"expires_in"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	IdToken      string    `json:"id_token"`
+	ProjectId    string    `json:"project_id"`
+	RefreshToken string    `json:"refresh_token"`
+	TokenType    string    `json:"token_type"`
+	UserId       string    `json:"user_id"`
 }
 
 // Profile structs
