@@ -115,14 +115,14 @@ if ([string]::IsNullOrEmpty($appixVersion)){
   $reader = New-Object System.IO.StreamReader $outputStream
   $content = $reader.ReadToEnd()
 
-  # The releases are returned in the format {"id":3622206,"tag_name":"hello-1.0.0.11"}, we have to extract the tag_name.
-  $content -match '.*"tag_name":"(.*)".*' | Out-Null
-  $latestVersion = $Matches[1]
+  # The releases are returned in a json like {... "tag_name":"hello-1.0.0.11", ...}, we have to extract the tag_name.
+  $json = $content | ConvertFrom-Json
+  $latestVersion = $json.tag_name
   $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$latestVersion/appix.exe"
 }
 else {
   # The version was explicitly specified
-  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/appix-$appixVersion/appix.exe"
+  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$appixVersion/appix.exe"
 }
 
 # We install into ~/.appix
