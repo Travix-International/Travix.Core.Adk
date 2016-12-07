@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/stages"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zip"
 )
 
@@ -31,11 +32,13 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 		return "", "", "", err
 	}
 
-	type AppManifestName struct {
-		Name string `json:"name"`
+	type AppManifestSettings struct {
+		Name  string         `json:"name"`
+		Build []stages.Stage `json:"build"`
+		Tests []stages.Stage `json:"tests"`
 	}
 
-	var manifestObject AppManifestName
+	var manifestObject AppManifestSettings
 
 	manifestData, err := ioutil.ReadFile(manifestPath)
 
@@ -54,6 +57,24 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 	if manifestObject.Name == "" {
 		log.Println("The name is missing from the app manifest")
 		return "", "", "", errors.New("The name is missing from the app manifest")
+	}
+
+	if len(manifestObject.Tests) > 0 {
+		// create a pool of stages
+		// wait for the return value of chan bool (a boolean)
+		rTests := <-stages.CreateStagePool(manifestObject.Tests)
+		if rTests {
+			return "", "", "", errors.New("The tests are failing. Please check the output")
+		}
+	}
+
+	if len(manifestObject.Build) > 0 {
+		// create a pool of stages
+		// wait for the return value of chan bool (a boolean)
+		bTests := <-stages.CreateStagePool(manifestObject.Build)
+		if bTests {
+			return "", "", "", errors.New("The build is failing. Please check the ouput")
+		}
 	}
 
 	appName = manifestObject.Name
