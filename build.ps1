@@ -33,7 +33,7 @@ Write-Output "AV vars are $env:APPVEYOR_BUILD_VERSION / $env:APPVEYOR_REPO_COMMI
 $env:GOARCH="amd64"
 $env:GOOS="linux"
 Write-Output "Building Linux binary..."
-go build -ldflags "$APP_LDFLAGS" -o bin\appix-linux -i .
+go build -ldflags "$APP_LDFLAGS" -o bin\appix-linux -i ./cmd/appix
 
 CheckLastExitCode "Linux"
 
@@ -41,13 +41,13 @@ $env:GOOS="darwin"
 Write-Output "Building Mac binary..."
 # NOTE: If we want to build on Windows and target OSX, we need the -tags kqueue option to make the notify library to compile. Otherwise it would give a build error.
 # Details: https://github.com/rjeczalik/notify/issues/108#event-811951351
-go build -tags kqueue -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i .
+go build -tags kqueue -ldflags "$APP_LDFLAGS" -o bin\appix-mac -i ./cmd/appix
 
 CheckLastExitCode "OSX"
 
 $env:GOOS="windows"
 Write-Output "Building Windows binary..."
-go build -ldflags "$APP_LDFLAGS" -o bin\appix.exe -i .
+go build -ldflags "$APP_LDFLAGS" -o bin\appix.exe -i ./cmd/appix
 
 CheckLastExitCode "Windows"
 
