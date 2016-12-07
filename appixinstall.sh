@@ -40,9 +40,9 @@ if [ -z "$APPIX_BIN_URL" ]; then
         RELEASES=$(curl -L -s -H 'Accept: application/json' https://github.com/Travix-International/Travix.Core.Adk/releases/latest)
 
         # The releases are returned in the format {"id":3622206,"tag_name":"hello-1.0.0.11"}, we have to extract the tag_name.
-        LATEST_VERISION=$(echo $RELEASES | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
+        LATEST_VERSION=$(echo $RELEASES | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
 
-        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$LATEST_VERISION/$APPIX_BIN_NAME"
+        APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$LATEST_VERSION/$APPIX_BIN_NAME"
     else
         # Get specific version
         APPIX_BIN_URL="https://github.com/Travix-International/Travix.Core.Adk/releases/download/$APPIX_VERSION/$APPIX_BIN_NAME"
