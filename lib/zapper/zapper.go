@@ -13,7 +13,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/zip"
 )
 
-func PrepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
+func PrepareAppUpload(configAppPath string, skipTest bool) (appPath string, appName string, manifestPath string, err error) {
 	if configAppPath == "" {
 		configAppPath = "."
 	}
@@ -59,7 +59,7 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 		return "", "", "", errors.New("The name is missing from the app manifest")
 	}
 
-	if len(manifestObject.Tests) > 0 {
+	if len(manifestObject.Tests) > 0 && skipTest == false {
 		// create a pool of stages
 		// wait for the return value of chan bool (a boolean)
 		rTests := <-stages.CreateStagePool(manifestObject.Tests)
