@@ -15,8 +15,12 @@ type Stage struct {
 	Cmd  string `json:"cmd"`
 }
 
-// the startStage method executes the command for the given kind of test
-func startStage(name string, cmd string) bool {
+var pool chan bool
+var wg sync.WaitGroup
+
+// startStage : executes the command for the given kind of test
+func startStage(name string, cmd string) {
+	defer wg.Done()
 	// format the command in order to use os/exec/Command
 	firstSpace := strings.Index(cmd, " ")
 
@@ -46,30 +50,22 @@ func startStage(name string, cmd string) bool {
 
 	if err != nil {
 		log.Printf("The stage '%s' failed: %s\n", name, err.Error())
-		return false
+		pool <- false
+		return
 	}
 	log.Printf("Stage '%s' done.", name)
-	return true
+	pool <- true
 }
 
 // CreateStagePool : create the pool of stage. Each stage must be independent since there is no synchronisation between the routines
 func CreateStagePool(stages []Stage) chan bool {
-	// maybe a bit hacky
-	// create a WaitGroup with a delta of 1 then malloc a pool of bool of size len(stages)
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	pool := make(chan bool, len(stages))
+	pool = make(chan bool, len(stages))
+	wg.Add(len(stages))
 
 	// the routine taking care of the result set in the pool
 	go func() error {
-		// defer the call of the WaitGroup.Done method
-		defer wg.Done()
-
-		for res := range pool {
-			if !res {
-				// if an error happened close the pool
+		for status := range pool {
+			if !status {
 				return errors.New("An error occured")
 			}
 		}
@@ -78,12 +74,12 @@ func CreateStagePool(stages []Stage) chan bool {
 
 	// fill the pool
 	for _, s := range stages {
-		pool <- startStage(s.Name, s.Cmd)
+		go startStage(s.Name, s.Cmd)
 	}
 
-	// wait and close
-	close(pool)
+	// close
 	wg.Wait()
+	close(pool)
 
 	return pool
 }
