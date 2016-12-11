@@ -14,7 +14,7 @@ done
 if [[ -z $(pwd | grep -o ".*Travix-International.*") ]]; then
   # create directory tree
   mkdir -p '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
-  cp -R * '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
+  cp -R . '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
   cd '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
   # create simlink for compilation
   # ln -s pwd '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
