@@ -75,7 +75,9 @@ func CreateZapPackage(appPath string, devFileName string, verbose bool) (string,
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = zip.ZipFolder(appPath, zapFile, IncludePathInZapFile, devFileName, verbose)
+	err = zip.ZipFolder(appPath, zapFile, func(path string, isDir bool) bool {
+		return includePathInZapFile(path, isDir, devFileName, verbose)
+	})
 
 	if err != nil {
 		log.Println("Could not process App folder!")
@@ -85,11 +87,15 @@ func CreateZapPackage(appPath string, devFileName string, verbose bool) (string,
 	return zapFile, err
 }
 
-func IncludePathInZapFile(relPath string, isDir bool, devFileName string, verbose bool) bool {
+func includePathInZapFile(relPath string, isDir bool, devFileName string, verbose bool) bool {
+	if isDir {
+		relPath += "/"
+	}
+
 	path := strings.ToLower(relPath)
 	canInclude := !strings.Contains(path, "/node_modules/") && // exclude node_modules
 		!strings.Contains(path, "/temp/") &&
-		!strings.Contains(path, ".git") &&
+		!strings.Contains(path, ".git/") &&
 		!strings.HasSuffix(path, ".idea/") &&
 		!strings.HasSuffix(path, ".vscode/") &&
 		!strings.HasSuffix(path, ".ds_store") &&

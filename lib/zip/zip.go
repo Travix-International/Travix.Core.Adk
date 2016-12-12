@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-func ZipFolder(source, target string, includePathInZipFn func(string, bool, string, bool) bool, devFileName string, verbose bool) error {
+type FilePickerFunc func(path string, isDir bool) bool
+
+func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -18,6 +20,7 @@ func ZipFolder(source, target string, includePathInZipFn func(string, bool, stri
 	archive := archiveZip.NewWriter(zipfile)
 	defer archive.Close()
 
+	ignoredSubFolders := make(map[string]struct{})
 	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -33,12 +36,19 @@ func ZipFolder(source, target string, includePathInZipFn func(string, bool, stri
 
 		relPath = strings.TrimLeft(relPath, "/")
 		isDir := info.IsDir()
+		dir := filepath.Dir(relPath)
 
-		if isDir {
-			relPath += "/"
+		if _, ok := ignoredSubFolders[dir]; ok {
+			if isDir {
+				ignoredSubFolders[relPath] = struct{}{}
+			}
+			return nil
 		}
 
-		if !includePathInZipFn(relPath, isDir, devFileName, verbose) {
+		if !includePathInZipFn(relPath, isDir) {
+			if isDir {
+				ignoredSubFolders[relPath] = struct{}{}
+			}
 			return nil
 		}
 
