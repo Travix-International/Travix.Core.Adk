@@ -52,9 +52,9 @@ var (
 	watcherState = waiting
 )
 
-func doPush(cmd *cmd.Command, context context.Context, openBrowser bool, pushDone *chan int) {
+func (cmd *WatchCommand) doPush(context context.Context, openBrowser bool, pushDone *chan int) {
 	pushCmd := &cmdPush.PushCommand{
-		Command:       cmd,
+		Command:       cmd.Command,
 		AppPath:       appPath,
 		NoPolling:     false,
 		WaitInSeconds: 180,
@@ -98,7 +98,7 @@ func (cmd *WatchCommand) Register(context context.Context) {
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(cmd.Command, context, true, nil)
+			cmd.doPush(context, true, nil)
 
 			livereload.SendReload()
 
@@ -134,12 +134,12 @@ func (cmd *WatchCommand) Register(context context.Context) {
 
 					log.Println("File change detected, executing appix push.")
 
-					go doPush(cmd.Command, context, false, &pushDone)
+					go cmd.doPush(context, false, &pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(cmd.Command, context, false, &pushDone)
+						go cmd.doPush(context, false, &pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")
