@@ -12,6 +12,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	cmdPush "github.com/Travix-International/Travix.Core.Adk/lib/cmd/push"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/ignore"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
 )
 
@@ -51,13 +52,14 @@ var (
 	watcherState = waiting
 )
 
-func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
-	pushCmd := &cmdPush.PushCommand{}
-
-	pushCmd.AppPath = appPath
-	pushCmd.NoPolling = false
-	pushCmd.WaitInSeconds = 180
-	pushCmd.NoBrowser = !openBrowser
+func doPush(cmd *cmd.Command, context context.Context, openBrowser bool, pushDone *chan int) {
+	pushCmd := &cmdPush.PushCommand{
+		Command:       cmd,
+		AppPath:       appPath,
+		NoPolling:     false,
+		WaitInSeconds: 180,
+		NoBrowser:     !openBrowser,
+	}
 
 	pushCmd.Push(context)
 
@@ -96,16 +98,26 @@ func (cmd *WatchCommand) Register(context context.Context) {
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(context, true, nil)
+			doPush(cmd.Command, context, true, nil)
 
 			livereload.SendReload()
 
 			// Infinite loop, the user can exit with Ctrl+C.
+			config := context.Config
+			shouldIgnore := ignore.Ignores(config.IgnoreFileName, config.DevFileName)
 			for {
 				select {
 				case ei := <-fileWatch:
 					if cmd.Verbose {
 						log.Println("File change event details:", ei)
+					}
+
+					filePath := ei.Path()
+					if shouldIgnore(filePath, false) {
+						if cmd.Verbose {
+							log.Println("Ignoring file changes:", filePath)
+						}
+						break
 					}
 
 					if watcherState == waiting {
@@ -122,12 +134,12 @@ func (cmd *WatchCommand) Register(context context.Context) {
 
 					log.Println("File change detected, executing appix push.")
 
-					go doPush(context, false, &pushDone)
+					go doPush(cmd.Command, context, false, &pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(context, false, &pushDone)
+						go doPush(cmd.Command, context, false, &pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")

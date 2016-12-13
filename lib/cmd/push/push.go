@@ -83,6 +83,7 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	openBrowser := !cmd.NoBrowser
 	waitInSeconds := cmd.WaitInSeconds
 	devFileName := context.Config.DevFileName
+	ignoreFileName := context.Config.IgnoreFileName
 
 	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath)
 
@@ -91,7 +92,7 @@ func (cmd *PushCommand) Push(context context.Context) error {
 		return err
 	}
 
-	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, cmd.Verbose)
+	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, ignoreFileName, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")

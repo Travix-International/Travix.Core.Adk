@@ -12,7 +12,8 @@ type Config struct {
 	CatalogURIs     map[string]string
 
 	// DevFileName is the name of the file which contains the appix development settings for this specific application
-	DevFileName string
+	DevFileName    string
+	IgnoreFileName string
 
 	DirectoryPath string
 	AuthFilePath  string

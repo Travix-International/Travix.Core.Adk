@@ -111,6 +111,7 @@ func makeConfig() *config.Config {
 		ParsedBuildDate: parsedBuildDate,
 		GitHash:         gitHash,
 		DevFileName:     ".appixDevSettings",
+		IgnoreFileName:  ".appixignore",
 		CatalogURIs:     catalogURIs,
 
 		DirectoryPath: directoryPath,

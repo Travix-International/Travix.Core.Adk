@@ -48,7 +48,7 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 				return err
 			}
 
-			zapFile, err := zapper.CreateZapPackage(appPath, config.DevFileName, cmd.Verbose)
+			zapFile, err := zapper.CreateZapPackage(appPath, config.DevFileName, config.IgnoreFileName, cmd.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")
