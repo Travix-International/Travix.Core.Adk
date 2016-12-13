@@ -20,6 +20,7 @@ type SubmitCommand struct {
 	*cmd.Command
 	appPath     string // path to the App folder
 	environment string // environment (default: dev)
+	NoVerify    bool   // skip the test
 }
 
 type submitResponse struct {
@@ -41,7 +42,7 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 				environment = "dev"
 			}
 
-			appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.appPath)
+			appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.appPath, cmd.NoVerify)
 
 			if err != nil {
 				log.Println("Could not prepare the app folder for uploading")
@@ -140,4 +141,8 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 	command.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
+
+	command.Flag("noVerify", "Appix won't run the tests. Only the build will be performed if specified.").
+		Default("false").
+		BoolVar(&cmd.NoVerify)
 }
