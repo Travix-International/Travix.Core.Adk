@@ -25,6 +25,7 @@ type PushCommand struct {
 	AppPath       string // path to the App folder
 	NoPolling     bool   // skip polling flag
 	NoBrowser     bool   // skip opening the site in the browser
+	NoVerify      bool   // skip the tests
 	WaitInSeconds int    // polling timeout
 }
 
@@ -69,6 +70,10 @@ func (cmd *PushCommand) Register(context context.Context) {
 		Default("false").
 		BoolVar(&cmd.NoBrowser)
 
+	command.Flag("noVerify", "Appix won't run the tests. Only the build will be performed if specified.").
+		Default("false").
+		BoolVar(&cmd.NoVerify)
+
 	command.Flag("wait", "The maximum time appix waits for the app bundling to be finished.").
 		Short('w').
 		Default("180").
@@ -81,10 +86,11 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	appPath := cmd.AppPath
 	pollingEnabled := !cmd.NoPolling
 	openBrowser := !cmd.NoBrowser
+	skipTest := cmd.NoVerify
 	waitInSeconds := cmd.WaitInSeconds
 	devFileName := context.Config.DevFileName
 
-	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath)
+	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath, skipTest)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
