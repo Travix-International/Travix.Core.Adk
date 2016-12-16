@@ -1,34 +1,50 @@
 package ignore
 
 import (
+	"path/filepath"
 	"strings"
+
+	"github.com/Travix-International/Travix.Core.Adk/lib/config"
 )
 
-func Includes(appixIgnoreFileName string, devFileName string) func(string, bool) bool {
-	return func(filePath string, isDir bool) bool {
-		if isDir {
-			filePath += "/"
-		}
-
-		path := strings.ToLower(filePath)
-		canInclude := !strings.Contains(path, "/node_modules/") &&
-			!strings.Contains(path, "/temp/") &&
-			!strings.Contains(path, ".git/") &&
-			!strings.HasSuffix(path, ".idea/") &&
-			!strings.HasSuffix(path, ".vscode/") &&
-			!strings.HasSuffix(path, ".ds_store") &&
-			!strings.HasSuffix(path, "thumbs.db") &&
-			!strings.HasSuffix(path, appixIgnoreFileName) &&
-			!strings.HasSuffix(path, devFileName) &&
-			!strings.HasSuffix(path, "desktop.ini")
-
-		return canInclude
-	}
+var ignoredFileNames = []string{
+	"node_modules",
+	"temp",
+	".git",
+	".idea",
+	".vscode",
+	".ds_store",
+	"thumbs.db",
+	"desktop.ini",
+	config.DevFileName,
+	config.IgnoreFileName,
 }
 
-func Ignores(appixIgnoreFileName string, devFileName string) func(string, bool) bool {
-	shouldInclude := Includes(appixIgnoreFileName, devFileName)
-	return func(path string, isDir bool) bool {
-		return !shouldInclude(path, isDir)
+// TODO: read from .appixignore file
+func Ignore() func(string, bool) (bool, bool) {
+	ignoredSubFolders := make(map[string]struct{})
+
+	// TODO: memoize this function
+	return func(path string, isDir bool) (bool, bool) {
+		filename := filepath.Base(path)
+		dir := filepath.Dir(path)
+
+		if _, ok := ignoredSubFolders[dir]; ok {
+			if isDir {
+				ignoredSubFolders[path] = struct{}{}
+			}
+			return true, true
+		}
+
+		for _, ignored := range ignoredFileNames {
+			if strings.EqualFold(filename, ignored) {
+				if isDir {
+					ignoredSubFolders[path] = struct{}{}
+				}
+				return true, false
+			}
+		}
+
+		return false, false
 	}
 }

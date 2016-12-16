@@ -18,8 +18,6 @@ type InitCommand struct {
 }
 
 func (cmd *InitCommand) Register(context context.Context) {
-	config := context.Config
-
 	command := context.App.Command("init", "Scaffold a new application into the specified folder").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// grab the absolute path
@@ -46,7 +44,7 @@ func (cmd *InitCommand) Register(context context.Context) {
 			}
 
 			// Scaffold
-			err = scaffold.ScaffoldNewApp(appPathAbsolute, config.DevFileName, cmd.Verbose)
+			err = scaffold.ScaffoldNewApp(appPathAbsolute, cmd.Verbose)
 			if err != nil {
 				return err
 			}

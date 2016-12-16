@@ -61,7 +61,7 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 	return appPath, appName, manifestPath, nil
 }
 
-func CreateZapPackage(appPath string, devFileName string, ignoreFileName string, verbose bool) (string, error) {
+func CreateZapPackage(appPath string, verbose bool) (string, error) {
 	tempFolder, err := ioutil.TempDir("", "appix")
 
 	if err != nil {
@@ -75,19 +75,17 @@ func CreateZapPackage(appPath string, devFileName string, ignoreFileName string,
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	shouldIncludeFile := ignore.Includes(ignoreFileName, devFileName)
+	isIgnoredFilePath := ignore.Ignore()
 	err = zip.ZipFolder(appPath, zapFile, func(path string, isDir bool) bool {
-		shouldInclude := shouldIncludeFile(path, isDir)
-
-		if verbose {
-			if shouldInclude {
-				log.Printf("\tAdding %s\n", path)
-			} else {
+		isIgnored, isInIgnoredFolder := isIgnoredFilePath(path, isDir)
+		if verbose && !isInIgnoredFolder {
+			if isIgnored {
 				log.Printf("\tSkipping %s\n", path)
+			} else {
+				log.Printf("\tAdding %s\n", path)
 			}
 		}
-
-		return shouldInclude
+		return !isIgnored
 	})
 
 	if err != nil {

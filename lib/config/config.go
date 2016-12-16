@@ -4,16 +4,15 @@ import (
 	"time"
 )
 
+const DevFileName = ".appixDevSettings"
+const IgnoreFileName = ".appixignore"
+
 type Config struct {
 	Version         string
 	BuildDate       string
 	ParsedBuildDate time.Time
 	GitHash         string
 	CatalogURIs     map[string]string
-
-	// DevFileName is the name of the file which contains the appix development settings for this specific application
-	DevFileName    string
-	IgnoreFileName string
 
 	DirectoryPath string
 	AuthFilePath  string

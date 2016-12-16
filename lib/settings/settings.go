@@ -6,6 +6,7 @@ import (
 	"log"
 	"path"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/config"
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -19,8 +20,8 @@ type DevelopmentSettings struct {
 	SessionID string // This would be the session ID that the user will use the push/preview his changes
 }
 
-func ReadDevelopmentSettings(appPath string, devFileName string, verbose bool) (*DevelopmentSettings, error) {
-	devSettingsPath := path.Join(appPath, devFileName)
+func ReadDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {
+	devSettingsPath := path.Join(appPath, config.DevFileName)
 	if verbose {
 		log.Printf("Reading development settings from %s", devSettingsPath)
 	}
@@ -41,8 +42,8 @@ func ReadDevelopmentSettings(appPath string, devFileName string, verbose bool) (
 	return &settings, nil
 }
 
-func WriteDevelopmentSettings(appPath string, devFileName string, settings *DevelopmentSettings, verbose bool) error {
-	devSettingsPath := path.Join(appPath, devFileName)
+func WriteDevelopmentSettings(appPath string, settings *DevelopmentSettings, verbose bool) error {
+	devSettingsPath := path.Join(appPath, config.DevFileName)
 	if verbose {
 		log.Printf("Writing development settings to %s", devSettingsPath)
 	}
