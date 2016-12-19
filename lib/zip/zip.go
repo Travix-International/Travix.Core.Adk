@@ -20,7 +20,7 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 	archive := archiveZip.NewWriter(zipfile)
 	defer archive.Close()
 
-	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -70,8 +70,6 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 
 		return err
 	})
-
-	return nil
 }
 
 func ExtractZip(src, dest string) error {
