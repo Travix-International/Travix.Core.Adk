@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type FilePickerFunc func(path string, isDir bool) bool
+type FilePickerFunc func(path string) bool
 
 func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 	zipfile, err := os.Create(target)
@@ -20,8 +20,7 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 	archive := archiveZip.NewWriter(zipfile)
 	defer archive.Close()
 
-	ignoredSubFolders := make(map[string]struct{})
-	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -29,26 +28,22 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 		path = strings.Replace(path, "\\", "/", -1)
 		sourcePath := strings.Replace(source, "\\", "/", -1)
 		relPath := strings.TrimPrefix(path, sourcePath)
+		isDir := info.IsDir()
 
 		if relPath == "" {
 			return nil
 		}
 
 		relPath = strings.TrimLeft(relPath, "/")
-		isDir := info.IsDir()
-		dir := filepath.Dir(relPath)
 
-		if _, ok := ignoredSubFolders[dir]; ok {
+		if !includePathInZipFn(relPath) {
 			if isDir {
-				ignoredSubFolders[relPath] = struct{}{}
+				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if !includePathInZipFn(relPath, isDir) {
-			if isDir {
-				ignoredSubFolders[relPath] = struct{}{}
-			}
+		if isDir {
 			return nil
 		}
 
@@ -58,18 +53,10 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 		}
 
 		header.Name = relPath
-
-		if !info.IsDir() {
-			header.Method = archiveZip.Deflate
-		}
-
+		header.Method = archiveZip.Deflate
 		writer, err := archive.CreateHeader(header)
 		if err != nil {
 			return err
-		}
-
-		if info.IsDir() {
-			return nil
 		}
 
 		file, err := os.Open(path)
@@ -82,8 +69,6 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 
 		return err
 	})
-
-	return err
 }
 
 func ExtractZip(src, dest string) error {

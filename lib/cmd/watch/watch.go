@@ -2,8 +2,10 @@ package watch
 
 import (
 	"log"
+	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/rjeczalik/notify"
@@ -12,6 +14,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	cmdPush "github.com/Travix-International/Travix.Core.Adk/lib/cmd/push"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
+	"github.com/Travix-International/Travix.Core.Adk/lib/ignore"
 	"github.com/Travix-International/Travix.Core.Adk/lib/livereload"
 )
 
@@ -51,13 +54,14 @@ var (
 	watcherState = waiting
 )
 
-func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
-	pushCmd := &cmdPush.PushCommand{}
-
-	pushCmd.AppPath = appPath
-	pushCmd.NoPolling = false
-	pushCmd.WaitInSeconds = 180
-	pushCmd.NoBrowser = !openBrowser
+func (cmd *WatchCommand) doPush(context context.Context, openBrowser bool, pushDone chan<- int) {
+	pushCmd := &cmdPush.PushCommand{
+		Command:       cmd.Command,
+		AppPath:       appPath,
+		NoPolling:     false,
+		WaitInSeconds: 180,
+		NoBrowser:     !openBrowser,
+	}
 
 	pushCmd.Push(context)
 
@@ -66,7 +70,7 @@ func doPush(context context.Context, openBrowser bool, pushDone *chan int) {
 	}
 
 	if pushDone != nil {
-		*(pushDone) <- 0
+		pushDone <- 0
 	}
 }
 
@@ -96,7 +100,7 @@ func (cmd *WatchCommand) Register(context context.Context) {
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(context, true, nil)
+			cmd.doPush(context, true, nil)
 
 			livereload.SendReload()
 
@@ -106,6 +110,17 @@ func (cmd *WatchCommand) Register(context context.Context) {
 				case ei := <-fileWatch:
 					if cmd.Verbose {
 						log.Println("File change event details:", ei)
+					}
+
+					filePath := ei.Path()
+					relPath := strings.TrimPrefix(filePath, absPath)
+					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
+
+					if ignored, ignoredFolder := ignore.IgnoreFilePath(relPath); ignored {
+						if cmd.Verbose && !ignoredFolder {
+							log.Println("Ignoring file changes:", filePath)
+						}
+						break
 					}
 
 					if watcherState == waiting {
@@ -122,12 +137,12 @@ func (cmd *WatchCommand) Register(context context.Context) {
 
 					log.Println("File change detected, executing appix push.")
 
-					go doPush(context, false, &pushDone)
+					go cmd.doPush(context, false, pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(context, false, &pushDone)
+						go cmd.doPush(context, false, pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")

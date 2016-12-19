@@ -82,7 +82,6 @@ func (cmd *PushCommand) Push(context context.Context) error {
 	pollingEnabled := !cmd.NoPolling
 	openBrowser := !cmd.NoBrowser
 	waitInSeconds := cmd.WaitInSeconds
-	devFileName := context.Config.DevFileName
 
 	appPath, appName, appManifestFile, err := zapper.PrepareAppUpload(cmd.AppPath)
 
@@ -91,14 +90,14 @@ func (cmd *PushCommand) Push(context context.Context) error {
 		return err
 	}
 
-	zapFile, err := zapper.CreateZapPackage(appPath, devFileName, cmd.Verbose)
+	zapFile, err := zapper.CreateZapPackage(appPath, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, devFileName, cmd.Verbose)
+	sessionID, err := getSessionID(appPath, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not get the session id.")
@@ -383,8 +382,8 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 }
 
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
-func getSessionID(appPath string, devFileName string, verbose bool) (string, error) {
-	s, err := settings.ReadDevelopmentSettings(appPath, devFileName, verbose)
+func getSessionID(appPath string, verbose bool) (string, error) {
+	s, err := settings.ReadDevelopmentSettings(appPath, verbose)
 
 	if err != nil {
 		s, err = settings.GetDefaultDevelopmentSettings()
@@ -394,7 +393,7 @@ func getSessionID(appPath string, devFileName string, verbose bool) (string, err
 			return "", err
 		}
 
-		err = settings.WriteDevelopmentSettings(appPath, devFileName, s, verbose)
+		err = settings.WriteDevelopmentSettings(appPath, s, verbose)
 
 		if err != nil {
 			log.Println("Could not save new development settings file.")

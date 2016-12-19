@@ -13,7 +13,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/zip"
 )
 
-func ScaffoldNewApp(appPath string, devFileName string, verbose bool) error {
+func ScaffoldNewApp(appPath string, verbose bool) error {
 	// Apply the template
 	log.Print("Scaffolding the application files...")
 	err := ApplyTemplate(appPath)
@@ -32,7 +32,7 @@ func ScaffoldNewApp(appPath string, devFileName string, verbose bool) error {
 	if verbose {
 		settings.LogDevelopmentSettings(developmentSettings)
 	}
-	err = settings.WriteDevelopmentSettings(appPath, devFileName, developmentSettings, verbose)
+	err = settings.WriteDevelopmentSettings(appPath, developmentSettings, verbose)
 	if err != nil {
 		log.Printf("Failed to store the development settings")
 		return err

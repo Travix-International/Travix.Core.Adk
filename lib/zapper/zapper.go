@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/Travix-International/Travix.Core.Adk/lib/ignore"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zip"
 )
 
@@ -61,7 +61,7 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 	return appPath, appName, manifestPath, nil
 }
 
-func CreateZapPackage(appPath string, devFileName string, verbose bool) (string, error) {
+func CreateZapPackage(appPath string, verbose bool) (string, error) {
 	tempFolder, err := ioutil.TempDir("", "appix")
 
 	if err != nil {
@@ -75,8 +75,16 @@ func CreateZapPackage(appPath string, devFileName string, verbose bool) (string,
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = zip.ZipFolder(appPath, zapFile, func(path string, isDir bool) bool {
-		return includePathInZapFile(path, isDir, devFileName, verbose)
+	err = zip.ZipFolder(appPath, zapFile, func(path string) bool {
+		ignored, ignoredFolder := ignore.IgnoreFilePath(path)
+		if verbose && !ignoredFolder {
+			if ignored {
+				log.Printf("\tSkipping %s\n", path)
+			} else {
+				log.Printf("\tAdding %s\n", path)
+			}
+		}
+		return !ignored
 	})
 
 	if err != nil {
@@ -85,30 +93,4 @@ func CreateZapPackage(appPath string, devFileName string, verbose bool) (string,
 	}
 
 	return zapFile, err
-}
-
-func includePathInZapFile(relPath string, isDir bool, devFileName string, verbose bool) bool {
-	if isDir {
-		relPath += "/"
-	}
-
-	path := strings.ToLower(relPath)
-	canInclude := !strings.Contains(path, "/node_modules/") && // exclude node_modules
-		!strings.Contains(path, "/temp/") &&
-		!strings.Contains(path, ".git/") &&
-		!strings.HasSuffix(path, ".idea/") &&
-		!strings.HasSuffix(path, ".vscode/") &&
-		!strings.HasSuffix(path, ".ds_store") &&
-		!strings.HasSuffix(path, "thumbs.db") &&
-		!strings.HasSuffix(path, devFileName) &&
-		!strings.HasSuffix(path, "desktop.ini")
-
-	if verbose {
-		if canInclude {
-			log.Printf("\tAdding %s\n", relPath)
-		} else {
-			log.Printf("\tSkipping %s\n", relPath)
-		}
-	}
-	return canInclude
 }
