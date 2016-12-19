@@ -21,11 +21,11 @@ var ignoredFileNames = []string{
 }
 
 // TODO: read from .appixignore file
-func Ignore() func(string, bool) (bool, bool) {
+func Ignore() func(path string, isDir bool) (isIgnored bool, isInIgnoredSubFolder bool) {
 	ignoredSubFolders := make(map[string]struct{})
 
 	// TODO: memoize this function
-	return func(path string, isDir bool) (bool, bool) {
+	return func(path string, isDir bool) (isIgnored bool, isInIgnoredSubFolder bool) {
 		filename := filepath.Base(path)
 		dir := filepath.Dir(path)
 
@@ -33,7 +33,11 @@ func Ignore() func(string, bool) (bool, bool) {
 			if isDir {
 				ignoredSubFolders[path] = struct{}{}
 			}
-			return true, true
+
+			isInIgnoredSubFolder = true
+			isIgnored = true
+
+			return
 		}
 
 		for _, ignored := range ignoredFileNames {
@@ -41,10 +45,11 @@ func Ignore() func(string, bool) (bool, bool) {
 				if isDir {
 					ignoredSubFolders[path] = struct{}{}
 				}
-				return true, false
+				isIgnored = true
+				return
 			}
 		}
 
-		return false, false
+		return
 	}
 }
