@@ -2,7 +2,6 @@ package watch
 
 import (
 	"log"
-	"os"
 	"path"
 	"path/filepath"
 	"time"
@@ -104,7 +103,6 @@ func (cmd *WatchCommand) Register(context context.Context) {
 			livereload.SendReload()
 
 			// Infinite loop, the user can exit with Ctrl+C.
-			shouldIgnore := ignore.Ignore()
 			for {
 				select {
 				case ei := <-fileWatch:
@@ -113,9 +111,8 @@ func (cmd *WatchCommand) Register(context context.Context) {
 					}
 
 					filePath := ei.Path()
-					isDir := isDirectory(filePath)
-					if ignored, isInIgnoredFolder := shouldIgnore(filePath, isDir); ignored {
-						if cmd.Verbose && !isInIgnoredFolder {
+					if ignored, ignoredFolder := ignore.IgnoreFilePath(filePath); ignored {
+						if cmd.Verbose && !ignoredFolder {
 							log.Println("Ignoring file changes:", filePath)
 						}
 						break
@@ -157,9 +154,4 @@ func (cmd *WatchCommand) Register(context context.Context) {
 	command.Flag("noBrowser", "Appix won't open the frontend in the browser after every push.").
 		Default("false").
 		BoolVar(&noBrowser)
-}
-
-func isDirectory(path string) bool {
-	stat, err := os.Stat(path)
-	return err != nil && stat.IsDir()
 }

@@ -21,35 +21,30 @@ var ignoredFileNames = []string{
 }
 
 // TODO: read from .appixignore file
-func Ignore() func(path string, isDir bool) (isIgnored bool, isInIgnoredSubFolder bool) {
-	ignoredSubFolders := make(map[string]struct{})
+func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
+	var recurse func(string) (bool, bool)
+	recurse = func(path string) (ignored bool, ignoredFolder bool) {
+		fileName := filepath.Base(path)
 
-	// TODO: memoize this function
-	return func(path string, isDir bool) (isIgnored bool, isInIgnoredSubFolder bool) {
-		filename := filepath.Base(path)
-		dir := filepath.Dir(path)
-
-		if _, ok := ignoredSubFolders[dir]; ok {
-			if isDir {
-				ignoredSubFolders[path] = struct{}{}
-			}
-
-			isInIgnoredSubFolder = true
-			isIgnored = true
-
+		if fileName == "." {
+			ignored = false
+			ignoredFolder = false
 			return
 		}
 
-		for _, ignored := range ignoredFileNames {
-			if strings.EqualFold(filename, ignored) {
-				if isDir {
-					ignoredSubFolders[path] = struct{}{}
-				}
-				isIgnored = true
-				return
+		for _, ignoredFileName := range ignoredFileNames {
+			if strings.EqualFold(fileName, ignoredFileName) {
+				ignored = true
+				break
 			}
 		}
 
+		dir := filepath.Dir(path)
+		ignoredFolder, _ = recurse(dir)
+		ignored = ignored || ignoredFolder
 		return
 	}
+
+	ignored, ignoredFolder = recurse(path)
+	return
 }
