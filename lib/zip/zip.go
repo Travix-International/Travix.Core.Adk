@@ -36,7 +36,14 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 
 		relPath = strings.TrimLeft(relPath, "/")
 
-		if !includePathInZipFn(relPath) || isDir {
+		if !includePathInZipFn(relPath) {
+			if isDir {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if isDir {
 			return nil
 		}
 

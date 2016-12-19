@@ -2,8 +2,10 @@ package watch
 
 import (
 	"log"
+	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/rjeczalik/notify"
@@ -111,7 +113,10 @@ func (cmd *WatchCommand) Register(context context.Context) {
 					}
 
 					filePath := ei.Path()
-					if ignored, ignoredFolder := ignore.IgnoreFilePath(filePath); ignored {
+					relPath := strings.TrimPrefix(filePath, absPath)
+					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
+
+					if ignored, ignoredFolder := ignore.IgnoreFilePath(relPath); ignored {
 						if cmd.Verbose && !ignoredFolder {
 							log.Println("Ignoring file changes:", filePath)
 						}
