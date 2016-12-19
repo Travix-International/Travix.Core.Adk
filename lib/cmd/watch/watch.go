@@ -54,7 +54,7 @@ var (
 	watcherState = waiting
 )
 
-func (cmd *WatchCommand) doPush(context context.Context, openBrowser bool, pushDone *chan int) {
+func (cmd *WatchCommand) doPush(context context.Context, openBrowser bool, pushDone chan<- int) {
 	pushCmd := &cmdPush.PushCommand{
 		Command:       cmd.Command,
 		AppPath:       appPath,
@@ -70,7 +70,7 @@ func (cmd *WatchCommand) doPush(context context.Context, openBrowser bool, pushD
 	}
 
 	if pushDone != nil {
-		*(pushDone) <- 0
+		pushDone <- 0
 	}
 }
 
@@ -137,12 +137,12 @@ func (cmd *WatchCommand) Register(context context.Context) {
 
 					log.Println("File change detected, executing appix push.")
 
-					go cmd.doPush(context, false, &pushDone)
+					go cmd.doPush(context, false, pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go cmd.doPush(context, false, &pushDone)
+						go cmd.doPush(context, false, pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")
