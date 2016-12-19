@@ -1,0 +1,108 @@
+package appix
+
+import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func PrepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
+	if configAppPath == "" {
+		configAppPath = "."
+	}
+
+	appPath, err = filepath.Abs(configAppPath)
+
+	if err != nil {
+		log.Printf("Invalid App path: %s\n", appPath)
+		return "", "", "", err
+	}
+
+	manifestPath = appPath + "/app.manifest"
+
+	if _, err = os.Stat(manifestPath); os.IsNotExist(err) {
+		log.Printf("App manifest not found: %s\n", manifestPath)
+		return "", "", "", err
+	}
+
+	type AppManifestName struct {
+		Name string `json:"name"`
+	}
+
+	var manifestObject AppManifestName
+
+	manifestData, err := ioutil.ReadFile(manifestPath)
+
+	if err != nil {
+		log.Println("Couldn't read the app.manifest")
+		return "", "", "", err
+	}
+
+	err = json.Unmarshal(manifestData, &manifestObject)
+
+	if err != nil {
+		log.Println("Couldn't parse the app.manifest")
+		return "", "", "", err
+	}
+
+	if manifestObject.Name == "" {
+		log.Println("The name is missing from the app manifest")
+		return "", "", "", errors.New("The name is missing from the app manifest")
+	}
+
+	appName = manifestObject.Name
+
+	return appPath, appName, manifestPath, nil
+}
+
+func CreateZapPackage(appPath string, devFileName string, verbose bool) (string, error) {
+	tempFolder, err := ioutil.TempDir("", "appix")
+
+	if err != nil {
+		log.Println("Could not create temp folder!")
+		return "", err
+	}
+
+	zapFile := tempFolder + "/app.zap"
+
+	if verbose {
+		log.Println("Creating ZAP file: " + zapFile)
+	}
+
+	err = ZipFolder(appPath, zapFile, func(path string, isDir bool) bool {
+		return includePathInZapFile(path, isDir, devFileName, verbose)
+	})
+
+	if err != nil {
+		log.Println("Could not process App folder!")
+		return "", err
+	}
+
+	return zapFile, err
+}
+
+func includePathInZapFile(relPath string, isDir bool, devFileName string, verbose bool) bool {
+	path := strings.ToLower(relPath)
+	canInclude := !strings.Contains(path, "/node_modules/") && // exclude node_modules
+		!strings.Contains(path, "/temp/") &&
+		!strings.Contains(path, ".git/") &&
+		!strings.HasSuffix(path, ".idea/") &&
+		!strings.HasSuffix(path, ".vscode/") &&
+		!strings.HasSuffix(path, ".ds_store") &&
+		!strings.HasSuffix(path, "thumbs.db") &&
+		!strings.HasSuffix(path, devFileName) &&
+		!strings.HasSuffix(path, "desktop.ini")
+
+	if verbose {
+		if canInclude {
+			log.Printf("\tAdding %s\n", relPath)
+		} else {
+			log.Printf("\tSkipping %s\n", relPath)
+		}
+	}
+	return canInclude
+}
