@@ -75,7 +75,7 @@ func CreateZapPackage(appPath string, verbose bool) (string, error) {
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = zip.ZipFolder(appPath, zapFile, func(path string, isDir bool) bool {
+	err = zip.ZipFolder(appPath, zapFile, func(path string) bool {
 		ignored, ignoredFolder := ignore.IgnoreFilePath(path)
 		if verbose && !ignoredFolder {
 			if ignored {
