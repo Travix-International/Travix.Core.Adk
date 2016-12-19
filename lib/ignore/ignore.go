@@ -1,6 +1,8 @@
 package ignore
 
 import (
+	"bufio"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -20,7 +22,6 @@ var ignoredFileNames = []string{
 	config.IgnoreFileName,
 }
 
-// TODO: read from .appixignore file
 func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
 	var recurse func(string) (bool, bool)
 	recurse = func(path string) (ignored bool, ignoredFolder bool) {
@@ -47,4 +48,20 @@ func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
 
 	ignored, ignoredFolder = recurse(path)
 	return
+}
+
+func init() {
+	file, err := os.Open(config.IgnoreFileName)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		ignoredFileName := scanner.Text()
+		if ignoredFileName != "" {
+			ignoredFileNames = append(ignoredFileNames, ignoredFileName)
+		}
+	}
 }
