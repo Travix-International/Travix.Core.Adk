@@ -45,6 +45,10 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 		return "", err
 	}
 
+	if verbose {
+		logServerResponse(response)
+	}
+
 	if response.StatusCode == 401 || response.StatusCode == 403 {
 		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
 		return "", fmt.Errorf("Authentication error")
