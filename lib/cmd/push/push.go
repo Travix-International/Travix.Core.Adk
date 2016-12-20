@@ -13,10 +13,10 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
+	. "github.com/Travix-International/Travix.Core.Adk/lib/internal"
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
 )
 
 // PushCommand used for pushing an app during app development
@@ -178,7 +178,7 @@ func doPolling(pollURI string, waitInSeconds int, openBrowser bool, verbose bool
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 			if openBrowser {
-				openUrl.OpenUrl(statusResponse.Links.Preview)
+				OpenUrl(statusResponse.Links.Preview)
 			}
 		} else {
 			log.Printf("App push failed.")
@@ -274,6 +274,10 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool, context
 		return "", err
 	}
 
+	if verbose {
+		LogServerResponse(response)
+	}
+
 	if response.StatusCode == 401 || response.StatusCode == 403 {
 		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
 		return "", fmt.Errorf("Authentication error")
@@ -346,6 +350,10 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 	if err != nil {
 		log.Println("Call to the Express frontend failed.")
 		return "", err
+	}
+
+	if verbose {
+		LogServerResponse(response)
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)
