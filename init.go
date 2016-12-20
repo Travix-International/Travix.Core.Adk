@@ -41,7 +41,7 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 			}
 
 			// Scaffold
-			err = ScaffoldNewApp(appPathAbsolute, config.DevFileName, cmd.Verbose)
+			err = ScaffoldNewApp(appPathAbsolute, cmd.Verbose)
 			if err != nil {
 				return err
 			}

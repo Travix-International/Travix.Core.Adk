@@ -2,8 +2,10 @@ package appix
 
 import (
 	"log"
+	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Travix-International/appix/config"
@@ -49,13 +51,14 @@ var (
 	watcherState = waiting
 )
 
-func doPush(config config.Config, openBrowser bool, pushDone *chan int) {
-	pushCmd := &PushCommand{}
-
-	pushCmd.AppPath = appPath
-	pushCmd.NoPolling = false
-	pushCmd.WaitInSeconds = 180
-	pushCmd.NoBrowser = !openBrowser
+func (cmd *WatchCommand) doPush(config config.Config, openBrowser bool, pushDone chan<- int) {
+	pushCmd := &PushCommand{
+		Command:       cmd.Command,
+		AppPath:       appPath,
+		NoPolling:     false,
+		WaitInSeconds: 180,
+		NoBrowser:     !openBrowser,
+	}
 
 	pushCmd.Push(config)
 
@@ -64,7 +67,7 @@ func doPush(config config.Config, openBrowser bool, pushDone *chan int) {
 	}
 
 	if pushDone != nil {
-		*(pushDone) <- 0
+		pushDone <- 0
 	}
 }
 
@@ -94,7 +97,7 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(config, true, nil)
+			cmd.doPush(config, true, nil)
 
 			livereload.SendReload()
 
@@ -104,6 +107,17 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 				case ei := <-fileWatch:
 					if cmd.Verbose {
 						log.Println("File change event details:", ei)
+					}
+
+					filePath := ei.Path()
+					relPath := strings.TrimPrefix(filePath, absPath)
+					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
+
+					if ignored, ignoredFolder := IgnoreFilePath(relPath); ignored {
+						if cmd.Verbose && !ignoredFolder {
+							log.Println("Ignoring file changes:", filePath)
+						}
+						break
 					}
 
 					if watcherState == waiting {
@@ -120,12 +134,12 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 
 					log.Println("File change detected, executing appix push.")
 
-					go doPush(config, false, &pushDone)
+					go cmd.doPush(config, false, pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(config, false, &pushDone)
+						go cmd.doPush(config, false, pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")

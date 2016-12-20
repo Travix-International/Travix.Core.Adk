@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-func ScaffoldNewApp(appPath string, devFileName string, verbose bool) error {
+func ScaffoldNewApp(appPath string, verbose bool) error {
 	// Apply the template
 	log.Print("Scaffolding the application files...")
 	err := ApplyTemplate(appPath)
@@ -29,7 +29,7 @@ func ScaffoldNewApp(appPath string, devFileName string, verbose bool) error {
 	if verbose {
 		LogDevelopmentSettings(developmentSettings)
 	}
-	err = WriteDevelopmentSettings(appPath, devFileName, developmentSettings, verbose)
+	err = WriteDevelopmentSettings(appPath, developmentSettings, verbose)
 	if err != nil {
 		log.Printf("Failed to store the development settings")
 		return err

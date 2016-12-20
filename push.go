@@ -78,7 +78,6 @@ func (cmd *PushCommand) Push(config config.Config) error {
 	pollingEnabled := !cmd.NoPolling
 	openBrowser := !cmd.NoBrowser
 	waitInSeconds := cmd.WaitInSeconds
-	devFileName := config.DevFileName
 
 	appPath, appName, appManifestFile, err := PrepareAppUpload(cmd.AppPath)
 
@@ -87,14 +86,14 @@ func (cmd *PushCommand) Push(config config.Config) error {
 		return err
 	}
 
-	zapFile, err := CreateZapPackage(appPath, devFileName, cmd.Verbose)
+	zapFile, err := CreateZapPackage(appPath, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, devFileName, cmd.Verbose)
+	sessionID, err := getSessionID(appPath, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not get the session id.")
@@ -211,10 +210,6 @@ func verifyProgress(pollURI string, quit <-chan interface{}) chan pushPollRespon
 				close(done)
 				return
 			}
-
-			respContent, err := ioutil.ReadAll(resp.Body)
-
-			log.Println("status response: ", string(respContent))
 
 			err = json.NewDecoder(resp.Body).Decode(&statusResponse)
 			resp.Body.Close()
@@ -383,8 +378,8 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 }
 
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
-func getSessionID(appPath string, devFileName string, verbose bool) (string, error) {
-	s, err := ReadDevelopmentSettings(appPath, devFileName, verbose)
+func getSessionID(appPath string, verbose bool) (string, error) {
+	s, err := ReadDevelopmentSettings(appPath, verbose)
 
 	if err != nil {
 		s, err = GetDefaultDevelopmentSettings()
@@ -394,7 +389,7 @@ func getSessionID(appPath string, devFileName string, verbose bool) (string, err
 			return "", err
 		}
 
-		err = WriteDevelopmentSettings(appPath, devFileName, s, verbose)
+		err = WriteDevelopmentSettings(appPath, s, verbose)
 
 		if err != nil {
 			log.Println("Could not save new development settings file.")

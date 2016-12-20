@@ -93,7 +93,6 @@ func makeConfig() config.Config {
 		BuildDate:       buildDate,
 		ParsedBuildDate: parsedBuildDate,
 		GitHash:         gitHash,
-		DevFileName:     ".appixDevSettings",
 		CatalogURIs:     catalogURIs,
 
 		DirectoryPath: directoryPath,

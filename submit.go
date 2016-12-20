@@ -44,7 +44,7 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 				return err
 			}
 
-			zapFile, err := CreateZapPackage(appPath, config.DevFileName, cmd.Verbose)
+			zapFile, err := CreateZapPackage(appPath, cmd.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")
