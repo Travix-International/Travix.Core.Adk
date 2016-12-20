@@ -44,37 +44,29 @@ var (
 func main() {
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
-	command := &appix.Command{}
+	args := appix.GlobalArgs{}
 
 	// App
 	app := kingpin.New("appix", "App Developer Kit for the Travix Fireball infrastructure.")
 
-	app.Flag("cat", "Specify the catalog to use (local, dev, staging, prod)").
+	app.Flag("catalog", "Specify the catalog to use (local, dev, staging, prod)").
+		Short('c').
 		Default("prod").
-		EnumVar(&command.TargetEnv, "local", "dev", "staging", "prod")
+		EnumVar(&args.TargetEnv, "local", "dev", "staging", "prod")
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
-		BoolVar(&command.Verbose)
-
-	app.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
-		BoolVar(&command.LocalFrontend)
+		BoolVar(&args.Verbose)
 
 	// Context
 	config := makeConfig()
 
-	commands := [...]appix.Registrable{
-		&appix.InitCommand{Command: command},
-		&appix.LoginCommand{Command: command},
-		&appix.PushCommand{Command: command},
-		&appix.SubmitCommand{Command: command},
-		&appix.VersionCommand{Command: command},
-		&appix.WatchCommand{Command: command},
-		&appix.WhoamiCommand{Command: command},
-	}
-
-	for _, c := range commands {
-		c.Register(app, config)
-	}
+	appix.RegisterInit(app, config, &args)
+	appix.RegisterLogin(app, config, &args)
+	appix.RegisterPush(app, config, &args)
+	appix.RegisterSubmit(app, config, &args)
+	appix.RegisterVersion(app, config)
+	appix.RegisterWatch(app, config, &args)
+	appix.RegisterWhoami(app, config, &args)
 
 	// kingpin config
 	kingpin.MustParse(app.Parse(os.Args[1:]))

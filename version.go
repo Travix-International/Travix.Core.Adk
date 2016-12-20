@@ -8,11 +8,8 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-type VersionCommand struct {
-	*Command
-}
-
-func (cmd *VersionCommand) Register(app *kingpin.Application, config config.Config) {
+// RegisterVersion registers the 'version' command.
+func RegisterVersion(app *kingpin.Application, config config.Config) {
 	app.Command("version", "Displays version information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			log.Printf("Version: %s", config.Version)

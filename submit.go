@@ -14,37 +14,33 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-// SubmitCommand used for submitting Apps
-type SubmitCommand struct {
-	*Command
-	appPath     string // path to the App folder
-	environment string // environment (default: dev)
-}
-
 type submitResponse struct {
 	Messages []string
 	Links    map[string]string
 }
 
-func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Config) {
+// RegisterSubmit registers the 'submit' command.
+func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	const submitTemplateURI = "%s/files/publish/%s"
+
+	var appPath string // path to the App folder
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			environment := cmd.environment
+			environment := args.TargetEnv
 
 			if environment == "" {
 				environment = "dev"
 			}
 
-			appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
+			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 			if err != nil {
 				log.Println("Could not prepare the app folder for uploading")
 				return err
 			}
 
-			zapFile, err := createZapPackage(appPath, cmd.Verbose)
+			zapFile, err := createZapPackage(appPath, args.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")
@@ -53,17 +49,17 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 
 			log.Printf("Run submit for App '%s', env '%s', path '%s'\n", appName, environment, appPath)
 
-			rootURI := config.CatalogURIs[cmd.TargetEnv]
+			rootURI := config.CatalogURIs[environment]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 			files := map[string]string{
 				"manifest": appManifestFile,
 				"zapfile":  zapFile,
 			}
 
-			if cmd.Verbose {
+			if args.Verbose {
 				log.Println("Posting files to App Catalog: " + submitURI)
 			}
-			request, err := appcatalog.CreateMultiFileUploadRequest(submitURI, files, nil, cmd.Verbose)
+			request, err := appcatalog.CreateMultiFileUploadRequest(submitURI, files, nil, args.Verbose)
 			if err != nil {
 				log.Println("Call to App Catalog failed!")
 				return err
@@ -98,7 +94,7 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 			var responseObject submitResponse
 			err = json.Unmarshal(responseBody, &responseObject)
 			if err != nil {
-				if cmd.Verbose {
+				if args.Verbose {
 					log.Println(err)
 				}
 
@@ -111,7 +107,7 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 				log.Printf("\t%v\n", line)
 			}
 
-			if cmd.Verbose {
+			if args.Verbose {
 				for key, val := range responseObject.Links {
 					log.Printf("\tLINK: %s\t\t%s", key, val)
 				}
@@ -135,5 +131,5 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 
 	command.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
-		ExistingDirVar(&cmd.appPath)
+		ExistingDirVar(&appPath)
 }

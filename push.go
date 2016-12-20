@@ -16,15 +16,6 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-// PushCommand used for pushing an app during app development
-type PushCommand struct {
-	*Command
-	AppPath       string // path to the App folder
-	NoPolling     bool   // skip polling flag
-	NoBrowser     bool   // skip opening the site in the browser
-	WaitInSeconds int    // polling timeout
-}
-
 type bundleMessage struct {
 	Widget string
 	Output string
@@ -48,52 +39,53 @@ const (
 	pollFailedStatus   = "FAILED"
 )
 
-func (cmd *PushCommand) Register(app *kingpin.Application, config config.Config) {
+// RegisterPush registers the 'push' command.
+func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+	var (
+		appPath       string // path to the App folder
+		noBrowser     bool   // skip opening the site in the browser
+		waitInSeconds int    // polling timeout
+		localFrontend bool   // true if we open the local frontend instead of the dev server
+	)
+
 	command := app.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return cmd.Push(config)
+			return push(config, appPath, noBrowser, waitInSeconds, localFrontend, args)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
 		Default(".").
-		ExistingDirVar(&cmd.AppPath)
-
-	command.Flag("noPolling", "DEPRECATED: Appix won't wait for the bundling of the app to be finished.").
-		Default("false").
-		BoolVar(&cmd.NoPolling)
+		ExistingDirVar(&appPath)
 
 	command.Flag("noBrowser", "Appix won't open the frontend in the browser.").
 		Default("false").
-		BoolVar(&cmd.NoBrowser)
+		BoolVar(&noBrowser)
 
 	command.Flag("wait", "The maximum time appix waits for the app bundling to be finished.").
 		Short('w').
 		Default("180").
-		IntVar(&cmd.WaitInSeconds)
+		IntVar(&waitInSeconds)
+
+	command.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
+		BoolVar(&localFrontend)
 }
 
-func (cmd *PushCommand) Push(config config.Config) error {
-
-	appPath := cmd.AppPath
-	pollingEnabled := !cmd.NoPolling
-	openBrowser := !cmd.NoBrowser
-	waitInSeconds := cmd.WaitInSeconds
-
-	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.AppPath)
+func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
+	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
 		return err
 	}
 
-	zapFile, err := createZapPackage(appPath, cmd.Verbose)
+	zapFile, err := createZapPackage(appPath, args.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, cmd.Verbose)
+	sessionID, err := getSessionID(appPath, args.Verbose)
 
 	if err != nil {
 		log.Println("Could not get the session id.")
@@ -102,17 +94,17 @@ func (cmd *PushCommand) Push(config config.Config) error {
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	rootURI := config.CatalogURIs[cmd.TargetEnv]
+	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := pushToCatalog(pushURI, appManifestFile, cmd.Verbose, config)
+	uploadURI, err := pushToCatalog(pushURI, appManifestFile, args.Verbose, config)
 
 	if err != nil {
 		log.Println("Error during pushing the manifest to the App Catalog.")
 		return err
 	}
 
-	if cmd.LocalFrontend {
+	if localFrontend {
 		log.Println("Ignoring URL and substituting local front-end URL instead.")
 		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
 		if err != nil {
@@ -125,7 +117,7 @@ func (cmd *PushCommand) Push(config config.Config) error {
 
 	log.Println("Frontend upload url:", uploadURI)
 
-	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, cmd.Verbose)
+	pollURI, err := uploadToFrontend(uploadURI, zapFile, appName, sessionID, args.Verbose)
 
 	log.Println("Frontend upload poll uri:", pollURI)
 
@@ -134,15 +126,9 @@ func (cmd *PushCommand) Push(config config.Config) error {
 		return err
 	}
 
-	if pollingEnabled {
-		doPolling(pollURI, waitInSeconds, openBrowser, cmd.Verbose)
-	} else {
-		log.Println("Polling not enabled")
-		log.Println("NOTE: The --noPolling will be removed in a future version.")
-		log.Println("If you want to prevent appix from opening the frontend in the browser, use the --noBrowser flag.")
-	}
+	doPolling(pollURI, wait, !noBrowser, args.Verbose)
 
-	if cmd.Verbose {
+	if args.Verbose {
 		log.Println("Push command has completed")
 	}
 

@@ -11,16 +11,14 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-type InitCommand struct {
-	*Command
-	appPath string // Path to where the app will be placed after the scaffold has taken place
-}
+// RegisterInit registers the 'init' command.
+func RegisterInit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+	var appPath string
 
-func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config) {
 	command := app.Command("init", "Scaffold a new application into the specified folder").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// grab the absolute path
-			appPathRelative := cmd.appPath
+			appPathRelative := appPath
 			appPathAbsolute, err := filepath.Abs(appPathRelative)
 			if err != nil {
 				log.Printf("Failed to obtain absolute path for %s\n%v", appPathRelative, err)
@@ -29,7 +27,7 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 
 			// tell the user what we're planning on doing
 			log.Print("Initializing new application")
-			if cmd.Verbose {
+			if args.Verbose {
 				log.Printf("Specified appPath to be %s", appPathRelative)
 				log.Printf("Absolute appPath is %s", appPathAbsolute)
 			}
@@ -43,7 +41,7 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 			}
 
 			// Scaffold
-			err = scaffoldNewApp(appPathAbsolute, cmd.Verbose)
+			err = scaffoldNewApp(appPathAbsolute, args.Verbose)
 			if err != nil {
 				return err
 			}
@@ -55,7 +53,7 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 
 	command.Arg("appPath", "Path to an empty folder. (default: current folder)").
 		Default(".").
-		ExistingDirVar(&cmd.appPath)
+		ExistingDirVar(&appPath)
 }
 
 func isEmptyPath(appPath string) (bool, error) {

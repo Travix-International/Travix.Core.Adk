@@ -9,11 +9,8 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-type LoginCommand struct {
-	*Command
-}
-
-func (cmd *LoginCommand) Register(app *kingpin.Application, config config.Config) {
+// RegisterLogin registers the 'login' command.
+func RegisterLogin(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	app.Command("login", "Login").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			var url = "http://localhost:" + config.AuthServerPort

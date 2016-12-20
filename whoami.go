@@ -10,11 +10,8 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-type WhoamiCommand struct {
-	*Command
-}
-
-func (cmd *WhoamiCommand) Register(app *kingpin.Application, config config.Config) {
+// RegisterWhoami registers the 'whoami' command.
+func RegisterWhoami(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	app.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			authToken, err := auth.LoadAuthToken(config)
@@ -25,7 +22,7 @@ func (cmd *WhoamiCommand) Register(app *kingpin.Application, config config.Confi
 			}
 
 			// fetch profile
-			if cmd.Verbose {
+			if args.Verbose {
 				log.Println("Fetching developer profile...")
 			}
 			profileBody, profileBodyErr := auth.FetchDeveloperProfile(authToken, config.DeveloperProfileUrl)

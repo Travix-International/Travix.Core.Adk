@@ -15,10 +15,6 @@ import (
 	"github.com/Travix-International/appix/livereload"
 )
 
-type WatchCommand struct {
-	*Command
-}
-
 // This watcher implements a simple state machine, making sure we handle currently if change events come in while we are executing a push.
 //
 // NOTE: The file watcher libraries sometimes send two separate events for one file change in quick succession. (Also, some editors, like vim, are doing multiple genuine file modifications for one single file save.)
@@ -51,27 +47,10 @@ var (
 	watcherState = waiting
 )
 
-func (cmd *WatchCommand) doPush(config config.Config, openBrowser bool, pushDone chan<- int) {
-	pushCmd := &PushCommand{
-		Command:       cmd.Command,
-		AppPath:       appPath,
-		NoPolling:     false,
-		WaitInSeconds: 180,
-		NoBrowser:     !openBrowser,
-	}
+// RegisterWatch registers the 'watch' command.
+func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+	var localFrontend bool
 
-	pushCmd.Push(config)
-
-	if !openBrowser {
-		livereload.SendReload()
-	}
-
-	if pushDone != nil {
-		pushDone <- 0
-	}
-}
-
-func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config) {
 	command := app.Command("watch", "Watches the current directory for changes, and pushes on any change.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// Channel on which we get file change events.
@@ -97,7 +76,7 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			cmd.doPush(config, true, nil)
+			doPush(config, args, true, localFrontend, nil)
 
 			livereload.SendReload()
 
@@ -105,7 +84,7 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 			for {
 				select {
 				case ei := <-fileWatch:
-					if cmd.Verbose {
+					if args.Verbose {
 						log.Println("File change event details:", ei)
 					}
 
@@ -114,7 +93,7 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
 
 					if ignored, ignoredFolder := IgnoreFilePath(relPath); ignored {
-						if cmd.Verbose && !ignoredFolder {
+						if args.Verbose && !ignoredFolder {
 							log.Println("Ignoring file changes:", filePath)
 						}
 						break
@@ -134,26 +113,40 @@ func (cmd *WatchCommand) Register(app *kingpin.Application, config config.Config
 
 					log.Println("File change detected, executing appix push.")
 
-					go cmd.doPush(config, false, pushDone)
+					go doPush(config, args, false, localFrontend, pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go cmd.doPush(config, false, pushDone)
+						go doPush(config, args, false, localFrontend, pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")
 					}
 				}
 			}
-
-			return nil
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&appPath)
+
 	command.Flag("noBrowser", "Appix won't open the frontend in the browser after every push.").
 		Default("false").
 		BoolVar(&noBrowser)
+
+	command.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
+		BoolVar(&localFrontend)
+}
+
+func doPush(config config.Config, args *GlobalArgs, openBrowser bool, localFrontend bool, pushDone chan<- int) {
+	push(config, appPath, !openBrowser, 180, localFrontend, args)
+
+	if !openBrowser {
+		livereload.SendReload()
+	}
+
+	if pushDone != nil {
+		pushDone <- 0
+	}
 }
