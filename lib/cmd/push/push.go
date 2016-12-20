@@ -13,10 +13,10 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
+	. "github.com/Travix-International/Travix.Core.Adk/lib/internal"
 	"github.com/Travix-International/Travix.Core.Adk/lib/settings"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
-	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
 )
 
 // PushCommand used for pushing an app during app development
@@ -178,7 +178,7 @@ func doPolling(pollURI string, waitInSeconds int, openBrowser bool, verbose bool
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 			if openBrowser {
-				openUrl.OpenUrl(statusResponse.Links.Preview)
+				OpenUrl(statusResponse.Links.Preview)
 			}
 		} else {
 			log.Printf("App push failed.")

@@ -1,4 +1,4 @@
-package openUrl
+package internal
 
 import (
 	"fmt"

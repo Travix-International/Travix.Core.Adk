@@ -8,7 +8,7 @@ import (
 	"github.com/Travix-International/Travix.Core.Adk/lib/auth_server"
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
-	"github.com/Travix-International/Travix.Core.Adk/utils/openUrl"
+	. "github.com/Travix-International/Travix.Core.Adk/lib/internal"
 )
 
 type LoginCommand struct {
@@ -26,7 +26,7 @@ func (cmd *LoginCommand) Register(context context.Context) {
 			go auth_server.StartServer(config, done)
 
 			fmt.Println("Opening url: " + url)
-			openUrl.OpenUrl(url)
+			OpenUrl(url)
 
 			select {
 			case <-done:
