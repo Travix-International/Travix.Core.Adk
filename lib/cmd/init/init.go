@@ -37,7 +37,7 @@ func (cmd *InitCommand) Register(context context.Context) {
 
 			// First we'll check to see if the directory is empty. It's purely for safety purposes, to ensure we don't overwrite
 			// anyting special. The command line handling has already validated that the folder actually exists
-			if empty, err := IsEmptyPath(appPathAbsolute); empty || err != nil {
+			if empty, err := IsEmptyPath(appPathAbsolute); !empty || err != nil {
 				log.Printf("The specified appPath '%s' does not appear to be an empty directory\n%v", appPathRelative, err)
 				return err
 			}
