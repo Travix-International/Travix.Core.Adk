@@ -11,6 +11,7 @@ import (
 
 	"github.com/Travix-International/Travix.Core.Adk/lib/cmd"
 	"github.com/Travix-International/Travix.Core.Adk/lib/context"
+	. "github.com/Travix-International/Travix.Core.Adk/lib/internal"
 	"github.com/Travix-International/Travix.Core.Adk/lib/upload"
 	"github.com/Travix-International/Travix.Core.Adk/lib/zapper"
 )
@@ -86,6 +87,10 @@ func (cmd *SubmitCommand) Register(context context.Context) {
 			if err != nil {
 				log.Println("Call to App Catalog failed!")
 				return err
+			}
+
+			if cmd.Verbose {
+				LogServerResponse(response)
 			}
 
 			if response.StatusCode == 401 || response.StatusCode == 403 {

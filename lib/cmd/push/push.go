@@ -274,6 +274,10 @@ func pushToCatalog(pushURI string, appManifestFile string, verbose bool, context
 		return "", err
 	}
 
+	if verbose {
+		LogServerResponse(response)
+	}
+
 	if response.StatusCode == 401 || response.StatusCode == 403 {
 		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
 		return "", fmt.Errorf("Authentication error")
@@ -346,6 +350,10 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 	if err != nil {
 		log.Println("Call to the Express frontend failed.")
 		return "", err
+	}
+
+	if verbose {
+		LogServerResponse(response)
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)
