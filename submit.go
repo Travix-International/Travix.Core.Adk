@@ -37,14 +37,14 @@ func (cmd *SubmitCommand) Register(app *kingpin.Application, config config.Confi
 				environment = "dev"
 			}
 
-			appPath, appName, appManifestFile, err := PrepareAppUpload(cmd.appPath)
+			appPath, appName, appManifestFile, err := prepareAppUpload(cmd.appPath)
 
 			if err != nil {
 				log.Println("Could not prepare the app folder for uploading")
 				return err
 			}
 
-			zapFile, err := CreateZapPackage(appPath, cmd.Verbose)
+			zapFile, err := createZapPackage(appPath, cmd.Verbose)
 
 			if err != nil {
 				log.Println("Could not create zap package!")

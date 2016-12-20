@@ -64,10 +64,10 @@ func createCertFiles() (cert string, key string) {
 
 // StartServer starts the Websocket server listening for the websites that want to connect.
 func StartServer() {
-	hub = NewHub()
-	go hub.Run()
+	hub = newHub()
+	go hub.run()
 	http.HandleFunc("/appixlivereload", func(w http.ResponseWriter, r *http.Request) {
-		ServeWs(hub, w, r)
+		serveWs(hub, w, r)
 	})
 
 	go startLocalServer()

@@ -22,7 +22,7 @@ func (cmd *LoginCommand) Register(app *kingpin.Application, config config.Config
 			go auth.StartServer(config, done)
 
 			fmt.Println("Opening url: " + url)
-			OpenUrl(url)
+			openURL(url)
 
 			select {
 			case <-done:

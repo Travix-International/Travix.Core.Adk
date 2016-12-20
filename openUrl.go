@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-func OpenUrl(url string) error {
+func openURL(url string) error {
 	var err error
 
 	switch runtime.GOOS {

@@ -1,7 +1,9 @@
 package appix
 
 import (
+	"io"
 	"log"
+	"os"
 	"path/filepath"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -34,14 +36,14 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 
 			// First we'll check to see if the directory is empty. It's purely for safety purposes, to ensure we don't overwrite
 			// anyting special. The command line handling has already validated that the folder actually exists
-			isEmptyPath, err := IsEmptyPath(appPathAbsolute)
+			isEmptyPath, err := isEmptyPath(appPathAbsolute)
 			if !isEmptyPath || err != nil {
 				log.Printf("The specified appPath '%s' does not appear to be an empty directory\n%v", appPathRelative, err)
 				return err
 			}
 
 			// Scaffold
-			err = ScaffoldNewApp(appPathAbsolute, cmd.Verbose)
+			err = scaffoldNewApp(appPathAbsolute, cmd.Verbose)
 			if err != nil {
 				return err
 			}
@@ -54,4 +56,23 @@ func (cmd *InitCommand) Register(app *kingpin.Application, config config.Config)
 	command.Arg("appPath", "Path to an empty folder. (default: current folder)").
 		Default(".").
 		ExistingDirVar(&cmd.appPath)
+}
+
+func isEmptyPath(appPath string) (bool, error) {
+	// See http://stackoverflow.com/questions/30697324/how-to-check-if-directory-on-path-is-empty
+
+	// Open the directory, which must not fail
+	f, err := os.Open(appPath)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	// See if there's anything in the directory at all
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+
+	return false, err
 }

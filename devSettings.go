@@ -20,7 +20,7 @@ type DevelopmentSettings struct {
 	SessionID string // This would be the session ID that the user will use the push/preview his changes
 }
 
-func ReadDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {
+func readDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {
 	devSettingsPath := path.Join(appPath, config.DevFileName)
 	if verbose {
 		log.Printf("Reading development settings from %s", devSettingsPath)
@@ -42,7 +42,7 @@ func ReadDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings
 	return &settings, nil
 }
 
-func WriteDevelopmentSettings(appPath string, settings *DevelopmentSettings, verbose bool) error {
+func writeDevelopmentSettings(appPath string, settings *DevelopmentSettings, verbose bool) error {
 	devSettingsPath := path.Join(appPath, config.DevFileName)
 	if verbose {
 		log.Printf("Writing development settings to %s", devSettingsPath)
@@ -63,7 +63,7 @@ func WriteDevelopmentSettings(appPath string, settings *DevelopmentSettings, ver
 	return nil
 }
 
-func GetDefaultDevelopmentSettings() (*DevelopmentSettings, error) {
+func getDefaultDevelopmentSettings() (*DevelopmentSettings, error) {
 	randomGUID, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
@@ -73,6 +73,6 @@ func GetDefaultDevelopmentSettings() (*DevelopmentSettings, error) {
 	return &settings, nil
 }
 
-func LogDevelopmentSettings(settings *DevelopmentSettings) {
+func logDevelopmentSettings(settings *DevelopmentSettings) {
 	log.Printf("Session ID: %s", settings.SessionID)
 }

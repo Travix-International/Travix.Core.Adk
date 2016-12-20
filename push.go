@@ -79,14 +79,14 @@ func (cmd *PushCommand) Push(config config.Config) error {
 	openBrowser := !cmd.NoBrowser
 	waitInSeconds := cmd.WaitInSeconds
 
-	appPath, appName, appManifestFile, err := PrepareAppUpload(cmd.AppPath)
+	appPath, appName, appManifestFile, err := prepareAppUpload(cmd.AppPath)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
 		return err
 	}
 
-	zapFile, err := CreateZapPackage(appPath, cmd.Verbose)
+	zapFile, err := createZapPackage(appPath, cmd.Verbose)
 
 	if err != nil {
 		log.Println("Could not create zap package.")
@@ -174,7 +174,7 @@ func doPolling(pollURI string, waitInSeconds int, openBrowser bool, verbose bool
 		if statusResponse.Meta.Status == pollFinishedStatus {
 			log.Printf("App successfully pushed. The frontend for this development session is at %s", statusResponse.Links.Preview)
 			if openBrowser {
-				OpenUrl(statusResponse.Links.Preview)
+				openURL(statusResponse.Links.Preview)
 			}
 		} else {
 			log.Printf("App push failed.")
@@ -379,17 +379,17 @@ func uploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
 func getSessionID(appPath string, verbose bool) (string, error) {
-	s, err := ReadDevelopmentSettings(appPath, verbose)
+	s, err := readDevelopmentSettings(appPath, verbose)
 
 	if err != nil {
-		s, err = GetDefaultDevelopmentSettings()
+		s, err = getDefaultDevelopmentSettings()
 
 		if err != nil {
 			log.Println("Couldn't create new development settings.")
 			return "", err
 		}
 
-		err = WriteDevelopmentSettings(appPath, s, verbose)
+		err = writeDevelopmentSettings(appPath, s, verbose)
 
 		if err != nil {
 			log.Println("Could not save new development settings file.")

@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 )
 
-func ScaffoldNewApp(appPath string, verbose bool) error {
+func scaffoldNewApp(appPath string, verbose bool) error {
 	// Apply the template
 	log.Print("Scaffolding the application files...")
-	err := ApplyTemplate(appPath)
+	err := applyTemplate(appPath)
 	if err != nil {
 		log.Printf("Failed to apply template")
 		return err
@@ -21,15 +21,15 @@ func ScaffoldNewApp(appPath string, verbose bool) error {
 
 	// Write out the development settings
 	log.Print("Initializing the development settings...")
-	developmentSettings, err := GetDefaultDevelopmentSettings()
+	developmentSettings, err := getDefaultDevelopmentSettings()
 	if err != nil {
 		log.Printf("Failed to generate default development settings")
 		return err
 	}
 	if verbose {
-		LogDevelopmentSettings(developmentSettings)
+		logDevelopmentSettings(developmentSettings)
 	}
-	err = WriteDevelopmentSettings(appPath, developmentSettings, verbose)
+	err = writeDevelopmentSettings(appPath, developmentSettings, verbose)
 	if err != nil {
 		log.Printf("Failed to store the development settings")
 		return err
@@ -38,7 +38,7 @@ func ScaffoldNewApp(appPath string, verbose bool) error {
 	return nil
 }
 
-func ApplyTemplate(appPath string) error {
+func applyTemplate(appPath string) error {
 	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/HelloWorldTemplate.zip"
 
 	tempFolder, err := ioutil.TempDir("", "appix")
@@ -70,7 +70,7 @@ func ApplyTemplate(appPath string) error {
 	}
 
 	// Unzip the template and do some basic replacements.
-	err = ExtractZip(tempFile, appPath)
+	err = extractZip(tempFile, appPath)
 	if err != nil {
 		return err
 	}

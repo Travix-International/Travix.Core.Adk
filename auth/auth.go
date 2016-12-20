@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -76,7 +75,7 @@ type ProfileBody struct {
 // If the user is not logged in, it returns an error.
 func LoadAuthToken(config config.Config) (TokenBody, error) {
 	firebaseAPIKey := config.FirebaseApiKey
-	authData, err := getAuthData(config.AuthFilePath)
+	authData, err := readAuthData(config.AuthFilePath)
 
 	if err != nil {
 		return TokenBody{}, err
@@ -88,7 +87,7 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	}
 
 	// Either we don't have a token yet, or it's expired (or close to expiry), so we get a new token.
-	authToken, err := refreshToken(authData, firebaseAPIKey)
+	authToken, err := authData.refreshToken(firebaseAPIKey)
 
 	if err != nil {
 		return TokenBody{}, err
@@ -96,7 +95,7 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 
 	authData.Token = authToken
 
-	err = SaveAuthData(config.AuthFilePath, authData)
+	err = saveAuthData(config.AuthFilePath, authData)
 
 	if err != nil {
 		return TokenBody{}, err
@@ -105,18 +104,8 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	return authToken, nil
 }
 
-func getAuthData(authFilePath string) (authResult *AuthData, err error) {
-	authResult, err = ReadAuthData(authFilePath)
-	return authResult, err
-}
-
-func refreshToken(a *AuthData, firebaseAPIKey string) (TokenBody, error) {
-	tokenBody, err := a.RefreshToken(firebaseAPIKey)
-	return tokenBody, err
-}
-
-// RefreshToken refreshes the OAuth access token based on the refresh token.
-func (auth *AuthData) RefreshToken(firebaseAPIKey string) (TokenBody, error) {
+// refreshToken refreshes the OAuth access token based on the refresh token.
+func (auth *AuthData) refreshToken(firebaseAPIKey string) (TokenBody, error) {
 	refreshToken := auth.User.StsTokenManager.RefreshToken
 
 	tokenClient := &http.Client{}
@@ -142,8 +131,8 @@ func (auth *AuthData) RefreshToken(firebaseAPIKey string) (TokenBody, error) {
 	return tokenBody, nil
 }
 
-// ReadAuthData reads the previously persisted access token from the disk.
-func ReadAuthData(authFilePath string) (*AuthData, error) {
+// readAuthData reads the previously persisted access token from the disk.
+func readAuthData(authFilePath string) (*AuthData, error) {
 	content, readErr := ioutil.ReadFile(authFilePath)
 	if readErr != nil {
 		return nil, readErr
@@ -160,8 +149,8 @@ func ReadAuthData(authFilePath string) (*AuthData, error) {
 	return &auth, nil
 }
 
-// SaveAuthData persists the access token to disk.
-func SaveAuthData(authFilePath string, data *AuthData) error {
+// saveAuthData persists the access token to disk.
+func saveAuthData(authFilePath string, data *AuthData) error {
 	content, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -174,39 +163,4 @@ func SaveAuthData(authFilePath string, data *AuthData) error {
 	}
 
 	return nil
-}
-
-// FetchDeveloperProfile gets the profile of the current user from the Profile Api.
-func FetchDeveloperProfile(tokenBody TokenBody, developerProfileURL string) (ProfileBody, error) {
-	tokenType := tokenBody.TokenType
-	tokenValue := tokenBody.IdToken
-
-	baseURL, _ := url.Parse(developerProfileURL)
-	relative, _ := url.Parse("profile")
-
-	profileClient := &http.Client{}
-	profileReq, profileReqErr := http.NewRequest("GET", baseURL.ResolveReference(relative).String(), nil)
-	if profileReqErr != nil {
-		return ProfileBody{}, profileReqErr
-	}
-
-	profileReq.Header.Set("Content-Type", "application/json")
-	profileReq.Header.Set("Authorization", tokenType+" "+tokenValue)
-	profileRes, profileResErr := profileClient.Do(profileReq)
-
-	defer profileRes.Body.Close()
-
-	if profileResErr != nil {
-		return ProfileBody{}, profileResErr
-	}
-
-	profileBody := ProfileBody{}
-	err := json.NewDecoder(profileRes.Body).Decode(&profileBody)
-
-	if err != nil {
-		log.Println(err)
-		return profileBody, err
-	}
-
-	return profileBody, nil
 }

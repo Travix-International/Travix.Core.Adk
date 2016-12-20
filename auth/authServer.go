@@ -10,6 +10,7 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
+// StartServer starts up the little web server serving up the page needed for the authentication.
 func StartServer(config config.Config, done chan interface{}) {
 	firebaseConfig := `
 		<script src="https://www.gstatic.com/firebasejs/3.6.0/firebase.js"></script>

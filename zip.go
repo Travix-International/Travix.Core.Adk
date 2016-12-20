@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-type FilePickerFunc func(path string) bool
+type filePickerFunc func(path string) bool
 
-func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
+func zipFolder(source, target string, includePathInZipFn filePickerFunc) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func ZipFolder(source, target string, includePathInZipFn FilePickerFunc) error {
 	})
 }
 
-func ExtractZip(src, dest string) error {
+func extractZip(src, dest string) error {
 	reader, err := archiveZip.OpenReader(src)
 
 	if err != nil {

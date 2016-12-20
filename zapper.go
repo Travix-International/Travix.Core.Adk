@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func PrepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
+func prepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
 	if configAppPath == "" {
 		configAppPath = "."
 	}
@@ -58,7 +58,7 @@ func PrepareAppUpload(configAppPath string) (appPath string, appName string, man
 	return appPath, appName, manifestPath, nil
 }
 
-func CreateZapPackage(appPath string, verbose bool) (string, error) {
+func createZapPackage(appPath string, verbose bool) (string, error) {
 	tempFolder, err := ioutil.TempDir("", "appix")
 
 	if err != nil {
@@ -72,7 +72,7 @@ func CreateZapPackage(appPath string, verbose bool) (string, error) {
 		log.Println("Creating ZAP file: " + zapFile)
 	}
 
-	err = ZipFolder(appPath, zapFile, func(path string) bool {
+	err = zipFolder(appPath, zapFile, func(path string) bool {
 		ignored, ignoredFolder := IgnoreFilePath(path)
 		if verbose && !ignoredFolder {
 			if ignored {
