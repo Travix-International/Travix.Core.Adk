@@ -108,7 +108,7 @@ Write-Output "Starting the Appix ADK installation"
 $appixVersion = $env:APPIX_VERSION
 if ([string]::IsNullOrEmpty($appixVersion)){
   # Determine the latest version
-  $req = [System.Net.WebRequest]::Create("https://github.com/Travix-International/Travix.Core.Adk/releases/latest") -as [System.Net.HttpWebRequest]
+  $req = [System.Net.WebRequest]::Create("https://github.com/Travix-International/appix/releases/latest") -as [System.Net.HttpWebRequest]
   $req.Accept = "application/json"
   $res = $req.GetResponse()
   $outputStream = $res.GetResponseStream()
@@ -118,11 +118,11 @@ if ([string]::IsNullOrEmpty($appixVersion)){
   # The releases are returned in a json like {... "tag_name":"hello-1.0.0.11", ...}, we have to extract the tag_name.
   $json = $content | ConvertFrom-Json
   $latestVersion = $json.tag_name
-  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$latestVersion/appix.exe"
+  $url = "https://github.com/Travix-International/appix/releases/download/$latestVersion/appix.exe"
 }
 else {
   # The version was explicitly specified
-  $url = "https://github.com/Travix-International/Travix.Core.Adk/releases/download/$appixVersion/appix.exe"
+  $url = "https://github.com/Travix-International/appix/releases/download/$appixVersion/appix.exe"
 }
 
 # We install into ~/.appix
