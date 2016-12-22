@@ -47,7 +47,7 @@ func UploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		log.Println("Error reading response from the fronted.")
+		log.Println("Error reading response from the frontend.")
 		return "", err
 	}
 
