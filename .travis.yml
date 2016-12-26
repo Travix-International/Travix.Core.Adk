@@ -20,7 +20,7 @@ deploy:
     - bin/appix-linux
     - bin/appix.exe
   on:
-    repo: Travix-International/Travix.Core.Adk
+    repo: Travix-International/appix
     tags: true # The deployment happens only if the commit has a tag.
 
 notifications:
