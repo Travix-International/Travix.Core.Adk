@@ -2,6 +2,24 @@
 
 set -euf -o pipefail
 
+# execute tests
+for f in $(find ./lib -name '*_test.go' | sed 's|/[^/]*$||')
+  do
+    if [[ -n "$f" ]]; then
+      go test $f;
+    fi
+done
+
+# check if we are on origin repository or fork
+if [[ -z $(pwd | grep -o ".*Travix-International.*") ]]; then
+  # create directory tree
+  mkdir -p '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
+  cp -R . '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
+  cd '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
+  # create simlink for compilation
+  # ln -s pwd '/Users/travis/gopath/src/github.com/Travix-International/Travix.Core.Adk/'
+fi
+
 BUILD_DATE=`LC_ALL=en_US.utf8 date -u +"%a.%B.%d.%Y.%R:%S.%z.%Z"`
 : "${TRAVIS_TAG:=0.0.0}"
 : "${TRAVIS_COMMIT:=`git rev-parse --short HEAD`}"
