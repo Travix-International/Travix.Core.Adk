@@ -2,8 +2,8 @@
 
 App Developer Kit for the Travix Fireball infrastructure. The ADK consists of `appix`, a CLI tool to publish Apps to the App Catalog.
 
-[![Build Status](https://travis-ci.org/Travix-International/appix.svg?branch=master)](https://travis-ci.org/Travix-International/appix)
-[![GitHub release](https://img.shields.io/github/release/Travix-International/appix.svg)](https://github.com/Travix-International/appix/releases/latest)
+[![Build Status](https://travis-ci.org/Travix-International/Travix.Core.Adk.svg?branch=master)](https://travis-ci.org/Travix-International/Travix.Core.Adk)
+[![GitHub release](https://img.shields.io/github/release/Travix-International/Travix.Core.Adk.svg)](https://github.com/Travix-International/Travix.Core.Adk/releases/latest)
 
 ## Installation
 
@@ -14,14 +14,14 @@ The ADK can be used on either Windows, Linux and Mac. There are separate install
 To install the latest version on Windows, execute the following command in a PowerShell window.
 
 ```
-iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/Travix-International/appix/master/appixinstall.ps1'))
+iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk/master/appixinstall.ps1'))
 ```
 
 To install a specific version of the ADK, set the `APPIX_VERSION` environment variable before executing the above script.
 
 ```
 $env:APPIX_VERSION='1.0.0.5'
-iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/Travix-International/appix/master/appixinstall.ps1'))
+iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk/master/appixinstall.ps1'))
 ```
 
 ### Linux and macOS
@@ -29,13 +29,13 @@ iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.co
 To install the latest version, run the following command in a terminal.
 
 ```
-$ curl -sSL https://raw.githubusercontent.com/Travix-International/appix/master/appixinstall.sh | sh
+$ curl -sSL https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk/master/appixinstall.sh | sh
 ```
 
 To install a specific version of the ADK, run the following command.
 
 ```
-$ curl -sSL https://raw.githubusercontent.com/Travix-International/appix/master/appixinstall.sh | APPIX_VERSION=1.0.0.5 sh
+$ curl -sSL https://raw.githubusercontent.com/Travix-International/Travix.Core.Adk/master/appixinstall.sh | APPIX_VERSION=1.0.0.5 sh
 ```
 
 ## Getting started
@@ -51,7 +51,7 @@ For developing the ADK itself:
 Clone the repo to your `$GOPATH`:
 
 ```
-$ git clone git@github.com:Travix-International/appix.git $GOPATH/src/Travix-International/appix
+$ git clone git@github.com:Travix-International/Travix.Core.Adk.git $GOPATH/src/Travix-International/Travix.Core.Adk
 ```
 
 ### Dependencies
@@ -59,7 +59,7 @@ $ git clone git@github.com:Travix-International/appix.git $GOPATH/src/Travix-Int
 Install the dependencies with [gvt](https://github.com/FiloSottile/gvt):
 
 ```
-$ cd $GOPATH/src/Travix-International/appix
+$ cd $GOPATH/src/Travix-International/Travix.Core.Adk
 $ gvt restore
 ```
 
