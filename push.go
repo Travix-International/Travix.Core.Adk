@@ -25,13 +25,14 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 	var (
 		appPath       string // path to the App folder
 		noBrowser     bool   // skip opening the site in the browser
+		noVerify      bool   // skip the tests
 		waitInSeconds int    // polling timeout
 		localFrontend bool   // true if we open the local frontend instead of the dev server
 	)
 
 	command := app.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return push(config, appPath, noBrowser, waitInSeconds, localFrontend, args)
+			return push(config, appPath, noBrowser, noVerify, waitInSeconds, localFrontend, args)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
@@ -42,6 +43,10 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 		Default("false").
 		BoolVar(&noBrowser)
 
+	command.Flag("noVerify", "Appix won't run the tests.").
+		Default("false").
+		BoolVar(&noVerify)
+
 	command.Flag("wait", "The maximum time appix waits for the app bundling to be finished.").
 		Short('w').
 		Default("180").
@@ -51,8 +56,8 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 		BoolVar(&localFrontend)
 }
 
-func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
-	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
+func push(config config.Config, appPath string, noBrowser bool, noVerify bool, wait int, localFrontend bool, args *GlobalArgs) error {
+	appPath, appName, appManifestFile, err := prepareAppUpload(appPath, noVerify)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
