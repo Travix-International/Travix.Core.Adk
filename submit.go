@@ -12,7 +12,7 @@ import (
 
 // RegisterSubmit registers the 'submit' command.
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
-	const submitTemplateURI = "%s/files/publish/%s"
+	const submitTemplateURI = "%s/apps/%s/submit"
 
 	var appPath string // path to the App folder
 
