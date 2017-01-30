@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	pushTemplateURI    = "%s/files/push/%s?sessionid=%s"
+	pushTemplateURI    = "%s/apps/%s/push?sessionid=%s"
 	pollClientTimeout  = 5 * time.Second
 	pollInterval       = 5 * time.Second // how often to poll status URL
 	pollFinishedStatus = "FINISHED"
