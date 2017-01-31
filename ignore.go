@@ -37,6 +37,9 @@ func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
 			if strings.EqualFold(fileName, ignoredFileName) {
 				ignored = true
 				break
+			} else if strings.Contains(fileName, ignoredFileName) {
+				ignored = true
+				break
 			}
 		}
 
