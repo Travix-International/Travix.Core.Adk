@@ -23,33 +23,25 @@ var ignoredFileNames = []string{
 }
 
 func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
-	var recurse func(string) (bool, bool)
-	recurse = func(path string) (ignored bool, ignoredFolder bool) {
-		fileName := filepath.Base(path)
+	fileName := filepath.Base(path)
+	dir := filepath.Dir(path)
 
-		if fileName == "." {
-			ignored = false
-			ignoredFolder = false
-			return
-		}
-
-		for _, ignoredFileName := range ignoredFileNames {
-			if strings.EqualFold(fileName, ignoredFileName) {
-				ignored = true
-				break
-			} else if strings.Contains(fileName, ignoredFileName) {
-				ignored = true
-				break
-			}
-		}
-
-		dir := filepath.Dir(path)
-		ignoredFolder, _ = recurse(dir)
-		ignored = ignored || ignoredFolder
+	if fileName == "." {
+		ignored = false
+		ignoredFolder = false
 		return
 	}
 
-	ignored, ignoredFolder = recurse(path)
+	for _, ignoredFileName := range ignoredFileNames {
+		if strings.EqualFold(fileName, ignoredFileName) {
+			ignored = true
+			break
+		} else if strings.Contains(dir, ignoredFileName + string(os.PathSeparator)) {
+			ignoredFolder = true
+			break
+		}
+	}
+
 	return
 }
 
