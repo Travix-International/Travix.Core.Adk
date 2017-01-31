@@ -36,7 +36,10 @@ func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
 		if strings.EqualFold(fileName, ignoredFileName) {
 			ignored = true
 			break
-		} else if strings.Contains(dir, ignoredFileName + string(os.PathSeparator)) {
+		}
+
+		dirPrefix := ignoredFileName + string(os.PathSeparator)
+		if strings.HasPrefix(dir, dirPrefix) || strings.Contains(dir, string(os.PathSeparator) + dirPrefix) {
 			ignoredFolder = true
 			break
 		}
