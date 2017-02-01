@@ -51,7 +51,7 @@ For developing the ADK itself:
 Clone the repo to your `$GOPATH`:
 
 ```
-$ git clone git@github.com:Travix-International/appix.git $GOPATH/src/Travix-International/appix
+$ git clone git@github.com:Travix-International/appix.git $GOPATH/src/github.com/Travix-International/appix
 ```
 
 ### Dependencies
