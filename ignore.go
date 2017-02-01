@@ -9,11 +9,11 @@ import (
 )
 
 var ignoredFileNames = []string{
-	"node_modules",
-	"temp",
-	".git",
-	".idea",
-	".vscode",
+	"node_modules/*",
+	"temp/*",
+	".git/*",
+	".idea/*",
+	".vscode/*",
 	".ds_store",
 	"thumbs.db",
 	"desktop.ini",
