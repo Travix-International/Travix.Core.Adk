@@ -4,8 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"strings"
-
+	"github.com/ryanuber/go-glob"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -22,25 +21,17 @@ var ignoredFileNames = []string{
 	config.IgnoreFileName,
 }
 
-func IgnoreFilePath(path string) (ignored bool, ignoredFolder bool) {
+func IgnoreFilePath(path string) (ignored bool) {
 	fileName := filepath.Base(path)
-	dir := filepath.Dir(path)
 
 	if fileName == "." {
 		ignored = false
-		ignoredFolder = false
 		return
 	}
 
 	for _, ignoredFileName := range ignoredFileNames {
-		if strings.EqualFold(fileName, ignoredFileName) {
+		if glob.Glob(ignoredFileName, path) {
 			ignored = true
-			break
-		}
-
-		dirPrefix := ignoredFileName + string(os.PathSeparator)
-		if strings.HasPrefix(dir, dirPrefix) || strings.Contains(dir, string(os.PathSeparator) + dirPrefix) {
-			ignoredFolder = true
 			break
 		}
 	}
