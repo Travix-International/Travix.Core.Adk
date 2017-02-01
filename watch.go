@@ -93,7 +93,8 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
 
 					if ignored:= IgnoreFilePath(relPath); ignored {
-						if args.Verbose {
+						ignoredFolder := IgnoreFilePath(filepath.Dir(relPath));
+						if args.Verbose && !ignoredFolder {
 							log.Println("Ignoring file changes:", filePath)
 						}
 						break
