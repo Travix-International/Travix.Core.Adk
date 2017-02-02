@@ -25,5 +25,6 @@ type Config struct {
 	FirebaseStorageBucket     string
 	FirebaseMessagingSenderId string
 
-	AuthServerPort string
+	AuthServerPort   string
+	MaxRetryAttempts int
 }

@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -18,62 +17,63 @@ type submitResponse struct {
 
 // SubmitToCatalog submits the specified app to the AppCatalog.
 func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, verbose bool, config config.Config) (acceptanceQueryURL string, err error) {
+	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
 		"zapfile":  zapFile,
 	}
 
-	if verbose {
-		log.Println("Posting files to App Catalog: " + submitURI)
+	if req, err = prepare(submitURI, files, config, verbose); err != nil {
+		return "", err
 	}
-	request, err := CreateMultiFileUploadRequest(submitURI, files, nil, verbose)
+
+	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
+		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
+		if acceptanceQueryURL, err = doSubmit(req, verbose); err == nil {
+			break
+		}
+	}
+
+	return
+}
+
+func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err error) {
+	client := &http.Client{
+		Timeout: timeout,
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return "", err
 	}
 
-	token, err := auth.LoadAuthToken(config)
-
-	if err == nil {
-		request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
-	} else {
-		log.Println("WARNING: You are not logged in. In a future version authentication will be mandatory.\nYou can log in using \"appix login\".")
-	}
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		log.Println("Call to App Catalog failed!")
-		return "", err
-	}
-
 	if verbose {
-		logServerResponse(response)
+		logServerResponse(res)
 	}
 
-	if response.StatusCode == 401 || response.StatusCode == 403 {
-		log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
+	if res.StatusCode == 401 || res.StatusCode == 403 {
+		log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
 		return "", fmt.Errorf("Authentication error")
 	}
 
-	responseBody, err := ioutil.ReadAll(response.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println("Error reading response from App Catalog!")
 		return "", err
 	}
 
 	var responseObject submitResponse
-	err = json.Unmarshal(responseBody, &responseObject)
+	err = json.Unmarshal(body, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
 		}
 
 		responseObject = submitResponse{}
-		responseObject.Messages = []string{string(responseBody)}
+		responseObject.Messages = []string{string(body)}
 	}
 
-	log.Printf("App Catalog returned statuscode %v. Response details:\n", response.StatusCode)
+	log.Printf("App Catalog returned statuscode %v. Response details:\n", res.StatusCode)
 	for _, line := range responseObject.Messages {
 		log.Printf("\t%v\n", line)
 	}
@@ -84,11 +84,12 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 		}
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Submit failed, App Catalog returned statuscode %v", response.StatusCode)
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Submit failed, App Catalog returned statuscode %v", res.StatusCode)
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]
 
 	return acceptanceQueryURLPath, nil
+
 }

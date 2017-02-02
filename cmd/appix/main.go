@@ -36,9 +36,10 @@ var (
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
-	targetEnv     = "prod"
-	verbose       = false
-	localFrontend = false
+	targetEnv        = "prod"
+	verbose          = false
+	localFrontend    = false
+	maxRetryAttempts = 5
 )
 
 func main() {
@@ -98,7 +99,8 @@ func makeConfig() config.Config {
 		FirebaseStorageBucket:     travixFirebaseStorageBucket,
 		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
 
-		AuthServerPort: "7001",
+		AuthServerPort:   "7001",
+		MaxRetryAttempts: maxRetryAttempts,
 	}
 
 	return config
