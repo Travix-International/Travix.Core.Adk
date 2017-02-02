@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -30,6 +31,11 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 		if uploadURI, err = doPush(req, verbose); err == nil {
 			break
+		}
+
+		if attempt < config.MaxRetryAttempts {
+			wait := math.Pow(2, float64(attempt-1)) * 1000
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
 	}
 

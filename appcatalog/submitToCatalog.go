@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"time"
 
 	"github.com/Travix-International/appix/config"
 )
@@ -31,6 +33,11 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 		if acceptanceQueryURL, err = doSubmit(req, verbose); err == nil {
 			break
+		}
+
+		if attempt < config.MaxRetryAttempts {
+			wait := math.Pow(2, float64(attempt-1)) * 1000
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
 	}
 
