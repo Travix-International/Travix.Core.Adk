@@ -5,56 +5,63 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"time"
 
-	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
+)
+
+const (
+	timeout = time.Duration(10 * time.Second)
 )
 
 // PushToCatalog pushes the specified app to the AppCatalog.
 func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config config.Config) (uploadURI string, err error) {
-	// To the App Catalog we have to POST the manifest in a multipart HTTP form.
-	// When doing the push, it'll only contain a single file, the manifest.
+	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
 	}
 
-	if verbose {
-		log.Println("Posting the app manifest to the App Catalog overlay: " + pushURI)
-	}
-
-	request, err := CreateMultiFileUploadRequest(pushURI, files, nil, verbose)
-
-	if err != nil {
-		log.Println("Creating the HTTP request failed.")
+	if req, err = prepare(pushURI, files, config, verbose); err != nil {
 		return "", err
 	}
 
-	token, err := auth.LoadAuthToken(config)
+	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
+		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
+		if uploadURI, err = doPush(req, verbose); err == nil {
+			break
+		}
 
-	if err == nil {
-		request.Header.Set("Authorization", token.TokenType+" "+token.IdToken)
-	} else {
-		log.Println("WARNING: You are not logged in. In a future version authentication will be mandatory.\nYou can log in using \"appix login\".")
+		if attempt < config.MaxRetryAttempts {
+			wait := math.Pow(2, float64(attempt-1)) * 1000
+			time.Sleep(time.Duration(wait) * time.Millisecond)
+		}
 	}
 
-	client := &http.Client{}
-	response, err := client.Do(request)
+	return
+}
+
+func doPush(req *http.Request, verbose bool) (uploadURI string, err error) {
+	client := &http.Client{
+		Timeout: timeout,
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
 		return "", err
 	}
 
 	if verbose {
-		logServerResponse(response)
+		logServerResponse(res)
 	}
 
-	if response.StatusCode == 401 || response.StatusCode == 403 {
-		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", response.StatusCode)
+	if res.StatusCode == 401 || res.StatusCode == 403 {
+		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
 		return "", fmt.Errorf("Authentication error")
 	}
 
-	responseBody, err := ioutil.ReadAll(response.Body)
+	body, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
 		log.Println("Error reading response from App Catalog.")
@@ -67,7 +74,7 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 	}
 
 	var responseObject PushResponse
-	err = json.Unmarshal(responseBody, &responseObject)
+	err = json.Unmarshal(body, &responseObject)
 	if err != nil {
 		if verbose {
 			log.Println(err)
@@ -76,16 +83,16 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 		return "", err
 	}
 
-	log.Printf("App Catalog returned status code %v. Response details:\n", response.StatusCode)
+	log.Printf("App Catalog returned status code %v. Response details:\n", res.StatusCode)
 
 	for _, line := range responseObject.Messages {
 		log.Printf("\t%v\n", line)
 	}
 
-	if response.StatusCode == http.StatusOK {
+	if res.StatusCode == http.StatusOK {
 		log.Println("App has been pushed successfully.")
 	} else {
-		return "", fmt.Errorf("Push failed, App Catalog returned status code %v", response.StatusCode)
+		return "", fmt.Errorf("Push failed, App Catalog returned status code %v", res.StatusCode)
 	}
 
 	return responseObject.Links["upload"], nil
