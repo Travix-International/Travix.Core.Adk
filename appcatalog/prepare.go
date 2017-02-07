@@ -3,6 +3,7 @@ package appcatalog
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
@@ -32,5 +33,11 @@ func addAuthenticationHeader(req *http.Request, config config.Config) error {
 	}
 
 	log.Println("WARNING: You are not logged in. In a future version authentication will be mandatory.\nYou can log in using \"appix login\".")
+
+	// we can safely ignore path errors (e.g. auth.json doesn't exist)
+	if _, ok := err.(*os.PathError); ok {
+		return nil
+	}
+
 	return err
 }
