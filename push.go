@@ -52,6 +52,8 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 }
 
 func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
+	myLogger := NewAppixLogger("push")
+
 	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 	if err != nil {
@@ -62,14 +64,14 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	zapFile, err := createZapPackage(appPath, args.Verbose)
 
 	if err != nil {
-		log.Println("Could not create zap package.")
+		myLogger.Error("Could not create zap package.")
 		return err
 	}
 
 	sessionID, err := getSessionID(appPath, args.Verbose)
 
 	if err != nil {
-		log.Println("Could not get the session id.")
+		myLogger.Error("Could not get the session id.")
 		return err
 	}
 
@@ -81,7 +83,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config)
 
 	if err != nil {
-		log.Println("Error during pushing the manifest to the App Catalog.")
+		myLogger.Error("Error during pushing the manifest to the App Catalog.")
 		return err
 	}
 
@@ -103,14 +105,14 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	log.Println("Frontend upload poll uri:", pollURI)
 
 	if err != nil {
-		log.Println("Error. during uploading package to the frontend")
+		myLogger.Error("Error. during uploading package to the frontend")
 		return err
 	}
 
 	appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
 
 	if args.Verbose {
-		log.Println("Push command has completed")
+		myLogger.Log("Push command has completed")
 	}
 
 	return nil

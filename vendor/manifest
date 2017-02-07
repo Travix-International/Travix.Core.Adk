@@ -2,6 +2,14 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/Travix-International/logger",
+			"repository": "https://github.com/Travix-International/logger",
+			"vcs": "git",
+			"revision": "1242939754e86500bb424179d2ba44697910489b",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/alecthomas/assert",
 			"repository": "https://github.com/alecthomas/assert",
 			"vcs": "git",

@@ -18,6 +18,8 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
+			myLogger := NewAppixLogger("submit")
+
 			environment := args.TargetEnv
 
 			if environment == "" {
@@ -27,14 +29,14 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 			if err != nil {
-				log.Println("Could not prepare the app folder for uploading")
+				myLogger.Error("Could not prepare the app folder for uploading")
 				return err
 			}
 
 			zapFile, err := createZapPackage(appPath, args.Verbose)
 
 			if err != nil {
-				log.Println("Could not create zap package!")
+				myLogger.Error(fmt.Sprintf("Could not create zap package: %s", err.Error()))
 				return err
 			}
 
@@ -46,10 +48,11 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config)
 
 			if err != nil {
+				myLogger.Error(fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()))
 				return err
 			}
 
-			log.Println("App has been submitted successfully.")
+			myLogger.Log("App has been submitted successfully.")
 
 			if acceptanceQueryURLPath != "" {
 				log.Println("You can use the following query URL to get this particular version of this app:")
