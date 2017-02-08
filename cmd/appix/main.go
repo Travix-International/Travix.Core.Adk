@@ -10,6 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/appix"
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -42,7 +43,17 @@ var (
 	maxRetryAttempts = 5
 )
 
+var running = make(chan bool)
+
 func main() {
+	appixLogger.NewAppixLogger()
+
+	go appixLogger.Start()
+
+	defer func() {
+		<-appixLogger.Stop()
+	}()
+
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
 	args := appix.GlobalArgs{}

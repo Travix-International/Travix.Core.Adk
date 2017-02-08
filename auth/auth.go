@@ -76,12 +76,6 @@ type ProfileBody struct {
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.
 func LoadAuthToken(config config.Config) (TokenBody, error) {
-	appixLogger.NewAppixLogger()
-
-	appixLogger.Start()
-
-	defer appixLogger.Stop()
-
 	firebaseAPIKey := config.FirebaseApiKey
 	authData, err := readAuthData(config.AuthFilePath)
 

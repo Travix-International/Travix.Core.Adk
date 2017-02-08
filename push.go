@@ -55,12 +55,6 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
 	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
-	appixLogger.NewAppixLogger()
-
-	appixLogger.Start()
-
-	defer appixLogger.Stop()
-
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
 		return err
