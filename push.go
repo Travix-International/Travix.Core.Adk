@@ -9,6 +9,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/appix/appcatalog"
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -52,9 +53,13 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 }
 
 func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
-	myLogger := NewAppixLogger("push")
-
 	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
+
+	appixLogger.NewAppixLogger()
+
+	appixLogger.Start()
+
+	defer appixLogger.Stop()
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
@@ -64,14 +69,22 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	zapFile, err := createZapPackage(appPath, args.Verbose)
 
 	if err != nil {
-		myLogger.Error("Could not create zap package.")
+		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Type:    "error",
+			Message: fmt.Sprintf("Could not create zap package: %s", err.Error()),
+			Action:  "AppixPush",
+		})
 		return err
 	}
 
 	sessionID, err := getSessionID(appPath, args.Verbose)
 
 	if err != nil {
-		myLogger.Error("Could not get the session id.")
+		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Type:    "error",
+			Message: fmt.Sprintf("Could not get the session id: %s", err.Error()),
+			Action:  "AppixPush",
+		})
 		return err
 	}
 
@@ -83,7 +96,11 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config)
 
 	if err != nil {
-		myLogger.Error("Error during pushing the manifest to the App Catalog.")
+		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Type:    "error",
+			Message: fmt.Sprintf("Error during pushing the manifest to the App Catalog: %s", err.Error()),
+			Action:  "AppixPush",
+		})
 		return err
 	}
 
@@ -105,14 +122,22 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	log.Println("Frontend upload poll uri:", pollURI)
 
 	if err != nil {
-		myLogger.Error("Error. during uploading package to the frontend")
+		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Type:    "error",
+			Message: fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
+			Action:  "AppixPush",
+		})
 		return err
 	}
 
 	appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
 
 	if args.Verbose {
-		myLogger.Log("Push command has completed")
+		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Type:    "log",
+			Message: "Push command has completed",
+			Action:  "AppixPush",
+		})
 	}
 
 	return nil
