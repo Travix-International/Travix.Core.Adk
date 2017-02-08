@@ -19,12 +19,6 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			appixLogger.NewAppixLogger()
-
-			appixLogger.Start()
-
-			defer appixLogger.Stop()
-
 			environment := args.TargetEnv
 
 			if environment == "" {

@@ -5,12 +5,14 @@ import (
 
 	"time"
 
+	"sync"
+
 	"github.com/Travix-International/logger"
 )
 
 var myLogger *logger.Logger
 
-type Callback func()
+var once sync.Once
 
 type LoggerNotification struct {
 	Message string
@@ -44,7 +46,9 @@ func getDefaultMeta(messageType string, applicationGroup string) map[string]stri
 	return defaultMeta
 }
 
-func loggy(notification LoggerNotification) {
+func loggy(notification LoggerNotification) chan bool {
+	done := make(chan bool)
+
 	go func(n LoggerNotification) {
 		var err error
 
@@ -57,13 +61,14 @@ func loggy(notification LoggerNotification) {
 		if err != nil {
 			log.Printf("An error occured when trying to log error: %s\n", err.Error())
 		}
+		done <- true
 	}(notification)
+
+	return done
 }
 
 func AddMessageToQueue(notification LoggerNotification) {
-	go func() {
-		LoggerNotificationQueue <- notification
-	}()
+	LoggerNotificationQueue <- notification
 }
 
 func Start() {
@@ -71,26 +76,31 @@ func Start() {
 		for {
 			select {
 			case notification := <-LoggerNotificationQueue:
-				loggy(notification)
+				<-loggy(notification)
 			case <-time.After(500 * time.Millisecond):
-				Quit <- true
-				close(Quit)
 				return
 			}
 		}
 	}()
 }
 
-func Stop() {
-	<-Quit
-	close(LoggerNotificationQueue)
+func Stop() chan bool {
+	done := make(chan bool)
+
+	go func() {
+		close(Quit)
+		done <- true
+	}()
+	return done
 }
 
 func NewAppixLogger() {
-	LoggerNotificationQueue = make(chan LoggerNotification)
-	Quit = make(chan bool)
-	meta := make(map[string]string)
+	once.Do(func() {
+		LoggerNotificationQueue = make(chan LoggerNotification)
+		Quit = make(chan bool)
+		meta := make(map[string]string)
 
-	myLogger, _ = logger.New(meta)
-	myLogger.AddTransport(createHttpTransport())
+		myLogger, _ = logger.New(meta)
+		myLogger.AddTransport(createHttpTransport())
+	})
 }
