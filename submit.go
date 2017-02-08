@@ -7,6 +7,7 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/appix/appcatalog"
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -18,7 +19,11 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			myLogger := NewAppixLogger("submit")
+			appixLogger.NewAppixLogger()
+
+			appixLogger.Start()
+
+			defer appixLogger.Stop()
 
 			environment := args.TargetEnv
 
@@ -29,14 +34,22 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 			if err != nil {
-				myLogger.Error("Could not prepare the app folder for uploading")
+				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Type:    "error",
+					Message: fmt.Sprintf("Could not prepare the app folder for uploading: %s", err.Error()),
+					Action:  "AppixSubmit",
+				})
 				return err
 			}
 
 			zapFile, err := createZapPackage(appPath, args.Verbose)
 
 			if err != nil {
-				myLogger.Error(fmt.Sprintf("Could not create zap package: %s", err.Error()))
+				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Type:    "error",
+					Message: fmt.Sprintf("Could not create zap package: %s", err.Error()),
+					Action:  "AppixSubmit",
+				})
 				return err
 			}
 
@@ -48,11 +61,19 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config)
 
 			if err != nil {
-				myLogger.Error(fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()))
+				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Type:    "error",
+					Message: fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()),
+					Action:  "AppixSubmit",
+				})
 				return err
 			}
 
-			myLogger.Log("App has been submitted successfully.")
+			appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+				Type:    "error",
+				Message: "App has been submitted successfully.",
+				Action:  "AppixSubmit",
+			})
 
 			if acceptanceQueryURLPath != "" {
 				log.Println("You can use the following query URL to get this particular version of this app:")
