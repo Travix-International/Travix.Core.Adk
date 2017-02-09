@@ -1,5 +1,27 @@
 package appixLogger
 
+/**
+ * Logger singleton
+ *
+ * usage: in your file declare a variable of type *Logger
+ * example:
+ *  var logger = appixLogger.NewAppixLogger()
+ *
+ * If you use it in command add the following line at the beginning of the code of your command
+ * example:
+ *  defer logger.Stop()
+ *
+ * Log something in your code:
+ * example:
+ *  if err != nil {
+ *   logger.AddMessageToQueue(appixLogger.LoggerNotification{
+ *			Type:    "error",
+ *			Message: fmt.Sprintf("Error here is the message: %s", err.Error()),
+ *			Action:  "myAction",
+ *   })
+ *  }
+ */
+
 import (
 	"log"
 
@@ -8,26 +30,29 @@ import (
 	loggy "github.com/Travix-International/logger"
 )
 
+// LoggerNotification : The structure describing a notification to log
 type LoggerNotification struct {
 	Message string
 	Action  string
 	Type    string
 }
 
+// Logger : The structure of the logger singleton
 type Logger struct {
 	Loggy                   *loggy.Logger
 	LoggerNotificationQueue chan LoggerNotification
 	Quit                    chan bool
 }
 
-const FROGGER_URL = "https://frogger.travix.com/logs/appixlog"
+// FroggerURL : the url of the server which stores the logs
+const FroggerURL = "https://frogger.travix.com/logs/appixlog"
 
 var once sync.Once
 var instance *Logger
 
 func createHTTPTransport() *loggy.Transport {
 	formatter := loggy.NewJSONFormat()
-	transport := loggy.NewHttpTransport(FROGGER_URL, formatter)
+	transport := loggy.NewHttpTransport(FroggerURL, formatter)
 
 	return transport
 }
@@ -63,6 +88,7 @@ func (l *Logger) log(notification LoggerNotification, done chan bool) {
 	}(notification)
 }
 
+// AddMessageToQueue : Add a new LoggerNotification object to the Queue and print on stdout the message
 func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
 	// log on stdout to kkep the user aware of what's going on
 	log.Printf("[appix:%s] %s\n", notification.Action, notification.Message)
@@ -72,6 +98,7 @@ func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
 	}
 }
 
+// Start : launch to go routine watching at the queue
 func (l *Logger) Start() {
 	go func() {
 		for {
@@ -87,12 +114,14 @@ func (l *Logger) Start() {
 	}()
 }
 
+// Stop : kill the logger routine
 func (l *Logger) Stop() {
 	go func() {
 		l.Quit <- true
 	}()
 }
 
+// NewAppixLogger : create a new instance of Logger if doesn't exist already. Otherwise return the actual instance
 func NewAppixLogger() *Logger {
 	once.Do(func() {
 		meta := make(map[string]string)
