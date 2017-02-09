@@ -27,6 +27,7 @@ var (
 	travixFirebaseStorageBucket     string
 	travixFirebaseMessagingSenderId string
 	travixDeveloperProfileUrl       string
+	travixLoggerUrl                 string
 )
 
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
@@ -46,10 +47,6 @@ var (
 var running = make(chan bool)
 
 func main() {
-	logger := appixLogger.NewAppixLogger()
-
-	logger.Start()
-
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
 	args := appix.GlobalArgs{}
@@ -67,6 +64,10 @@ func main() {
 
 	// Context
 	config := makeConfig()
+
+	// appixLogger
+	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
+	logger.Start()
 
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
@@ -105,6 +106,7 @@ func makeConfig() config.Config {
 		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
 		FirebaseStorageBucket:     travixFirebaseStorageBucket,
 		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+		TravixLoggerUrl:           travixLoggerUrl,
 
 		AuthServerPort:   "7001",
 		MaxRetryAttempts: maxRetryAttempts,

@@ -42,17 +42,15 @@ type Logger struct {
 	Loggy                   *loggy.Logger
 	LoggerNotificationQueue chan LoggerNotification
 	Quit                    chan bool
+	loggerURL               string
 }
-
-// FroggerURL : the url of the server which stores the logs
-const FroggerURL = "https://frogger.travix.com/logs/appixlog"
 
 var once sync.Once
 var instance *Logger
 
-func createHTTPTransport() *loggy.Transport {
+func createHTTPTransport(url string) *loggy.Transport {
 	formatter := loggy.NewJSONFormat()
-	transport := loggy.NewHttpTransport(FroggerURL, formatter)
+	transport := loggy.NewHttpTransport(url, formatter)
 
 	return transport
 }
@@ -122,13 +120,13 @@ func (l *Logger) Stop() {
 }
 
 // NewAppixLogger : create a new instance of Logger if doesn't exist already. Otherwise return the actual instance
-func NewAppixLogger() *Logger {
+func NewAppixLogger(url string) *Logger {
 	once.Do(func() {
 		meta := make(map[string]string)
 		myLogger, _ := loggy.New(meta)
 
 		if myLogger != nil {
-			myLogger.AddTransport(createHTTPTransport())
+			myLogger.AddTransport(createHTTPTransport(url))
 		}
 
 		instance = &Logger{
