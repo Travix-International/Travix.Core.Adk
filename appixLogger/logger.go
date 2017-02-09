@@ -5,8 +5,6 @@ import (
 
 	"sync"
 
-	"fmt"
-
 	loggy "github.com/Travix-International/logger"
 )
 
@@ -14,7 +12,6 @@ type LoggerNotification struct {
 	Message string
 	Action  string
 	Type    string
-	Done    chan bool
 }
 
 type Logger struct {
@@ -23,10 +20,9 @@ type Logger struct {
 	Quit                    chan bool
 }
 
-const FROGGER_URL = "https://frogger.staging.travix.com/logs/appixlog"
+const FROGGER_URL = "https://frogger.travix.com/logs/appixlog"
 
 var once sync.Once
-var wg sync.WaitGroup
 var instance *Logger
 
 func createHTTPTransport() *loggy.Transport {
@@ -68,18 +64,21 @@ func (l *Logger) log(notification LoggerNotification, done chan bool) {
 }
 
 func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
-	l.LoggerNotificationQueue <- notification
+	if l.Loggy != nil {
+		l.LoggerNotificationQueue <- notification
+	} else {
+		log.Printf("[appix:%s] %s\n", notification.Action, notification.Message)
+	}
 }
 
 func (l *Logger) Start() {
 	go func() {
 		for {
 			select {
-			case notification, more := <-l.LoggerNotificationQueue:
+			case notification := <-l.LoggerNotificationQueue:
 				done := make(chan bool)
 				l.log(notification, done)
 				<-done
-				fmt.Print(more)
 			case <-l.Quit:
 				return
 			}
