@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"github.com/ryanuber/go-glob"
+	"strings"
+
 	"github.com/Travix-International/appix/config"
+	"github.com/ryanuber/go-glob"
 )
 
 var ignoredFileNames = []string{
@@ -48,8 +50,8 @@ func init() {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		ignoredFileName := scanner.Text()
-		if ignoredFileName != "" {
+		ignoredFileName := strings.Trim(scanner.Text(), " ")
+		if ignoredFileName != "" && strings.HasPrefix(ignoredFileName, "#") {
 			ignoredFileNames = append(ignoredFileNames, ignoredFileName)
 		}
 	}
