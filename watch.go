@@ -2,10 +2,8 @@ package appix
 
 import (
 	"log"
-	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/Travix-International/appix/config"
@@ -89,12 +87,15 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 					}
 
 					filePath := ei.Path()
-					relPath := strings.TrimPrefix(filePath, absPath)
-					relPath = strings.TrimLeft(relPath, string(os.PathSeparator))
+					relPath, err := filepath.Rel(absPath, filePath)
 
-					if ignored:= IgnoreFilePath(relPath); ignored {
-						ignoredFolder := IgnoreFilePath(filepath.Dir(relPath));
-						if args.Verbose && !ignoredFolder {
+					if err != nil {
+						log.Printf("Error obtaining relative file path to %s\n", filePath)
+						break
+					}
+
+					if ignored := IgnoreFilePath(relPath); ignored {
+						if args.Verbose {
 							log.Println("Ignoring file changes:", filePath)
 						}
 						break

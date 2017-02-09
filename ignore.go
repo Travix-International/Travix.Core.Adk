@@ -22,6 +22,7 @@ var ignoredFileNames = []string{
 	"**/node_modules",
 	"**/node_modules/*",
 	".git",
+	".git/*",
 	".gitignore",
 	"**/.gitkeep",
 	"temp",
@@ -52,6 +53,7 @@ func IgnoreFilePath(path string) (ignored bool) {
 	}
 
 	for _, ignoredFileName := range ignoredFileNames {
+		ignoredFileName = strings.Replace(ignoredFileName, "/", string(os.PathSeparator), -1)
 		if glob.Glob(ignoredFileName, path) {
 			ignored = true
 			break
