@@ -73,6 +73,8 @@ type ProfileBody struct {
 	Profile    Profile
 }
 
+var logger = appixLogger.NewAppixLogger()
+
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.
 func LoadAuthToken(config config.Config) (TokenBody, error) {
@@ -80,7 +82,7 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	authData, err := readAuthData(config.AuthFilePath)
 
 	if err != nil {
-		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Type:    "error",
 			Message: fmt.Sprintf("Could not find authentication data: %s", err.Error()),
 			Action:  "AppixAuthentication",
@@ -97,7 +99,7 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	authToken, err := authData.refreshToken(firebaseAPIKey)
 
 	if err != nil {
-		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Type:    "error",
 			Message: fmt.Sprintf("Could not retrieve a new token: %s", err.Error()),
 			Action:  "AppixAuthentication",
@@ -110,7 +112,7 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	err = saveAuthData(config.AuthFilePath, authData)
 
 	if err != nil {
-		appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Type:    "error",
 			Message: fmt.Sprintf("Could not save data: %s", err.Error()),
 			Action:  "AppixAuthentication",

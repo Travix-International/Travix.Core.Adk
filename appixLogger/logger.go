@@ -3,31 +3,35 @@ package appixLogger
 import (
 	"log"
 
-	"time"
-
 	"sync"
 
-	"github.com/Travix-International/logger"
+	"fmt"
+
+	loggy "github.com/Travix-International/logger"
 )
-
-var myLogger *logger.Logger
-
-var once sync.Once
 
 type LoggerNotification struct {
 	Message string
 	Action  string
 	Type    string
+	Done    chan bool
 }
 
-var LoggerNotificationQueue chan LoggerNotification
-var Quit chan bool
+type Logger struct {
+	Loggy                   *loggy.Logger
+	LoggerNotificationQueue chan LoggerNotification
+	Quit                    chan bool
+}
 
-const FROGGER_URL = "https://frogger.staging.travix.com/logs/totolog"
+const FROGGER_URL = "https://frogger.staging.travix.com/logs/appixlog"
 
-func createHttpTransport() *logger.Transport {
-	formatter := logger.NewJSONFormat()
-	transport := logger.NewHttpTransport(FROGGER_URL, formatter)
+var once sync.Once
+var wg sync.WaitGroup
+var instance *Logger
+
+func createHTTPTransport() *loggy.Transport {
+	formatter := loggy.NewJSONFormat()
+	transport := loggy.NewHttpTransport(FROGGER_URL, formatter)
 
 	return transport
 }
@@ -46,16 +50,14 @@ func getDefaultMeta(messageType string, applicationGroup string) map[string]stri
 	return defaultMeta
 }
 
-func loggy(notification LoggerNotification) chan bool {
-	done := make(chan bool)
-
+func (l *Logger) log(notification LoggerNotification, done chan bool) {
 	go func(n LoggerNotification) {
 		var err error
 
 		if n.Type == "error" {
-			err = myLogger.ErrorWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+			err = l.Loggy.ErrorWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
 		} else {
-			err = myLogger.InfoWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+			err = l.Loggy.InfoWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
 		}
 
 		if err != nil {
@@ -63,44 +65,48 @@ func loggy(notification LoggerNotification) chan bool {
 		}
 		done <- true
 	}(notification)
-
-	return done
 }
 
-func AddMessageToQueue(notification LoggerNotification) {
-	LoggerNotificationQueue <- notification
+func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
+	l.LoggerNotificationQueue <- notification
 }
 
-func Start() {
+func (l *Logger) Start() {
 	go func() {
 		for {
 			select {
-			case notification := <-LoggerNotificationQueue:
-				<-loggy(notification)
-			case <-time.After(500 * time.Millisecond):
+			case notification, more := <-l.LoggerNotificationQueue:
+				done := make(chan bool)
+				l.log(notification, done)
+				<-done
+				fmt.Print(more)
+			case <-l.Quit:
 				return
 			}
 		}
 	}()
 }
 
-func Stop() chan bool {
-	done := make(chan bool)
-
+func (l *Logger) Stop() {
 	go func() {
-		close(Quit)
-		done <- true
+		l.Quit <- true
 	}()
-	return done
 }
 
-func NewAppixLogger() {
+func NewAppixLogger() *Logger {
 	once.Do(func() {
-		LoggerNotificationQueue = make(chan LoggerNotification)
-		Quit = make(chan bool)
 		meta := make(map[string]string)
+		myLogger, _ := loggy.New(meta)
 
-		myLogger, _ = logger.New(meta)
-		myLogger.AddTransport(createHttpTransport())
+		if myLogger != nil {
+			myLogger.AddTransport(createHTTPTransport())
+		}
+
+		instance = &Logger{
+			LoggerNotificationQueue: make(chan LoggerNotification),
+			Quit:  make(chan bool),
+			Loggy: myLogger,
+		}
 	})
+	return instance
 }

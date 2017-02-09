@@ -46,13 +46,9 @@ var (
 var running = make(chan bool)
 
 func main() {
-	appixLogger.NewAppixLogger()
+	logger := appixLogger.NewAppixLogger()
 
-	go appixLogger.Start()
-
-	defer func() {
-		<-appixLogger.Stop()
-	}()
+	logger.Start()
 
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
