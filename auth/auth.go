@@ -120,6 +120,12 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 		return TokenBody{}, err
 	}
 
+	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+		Type:    "info",
+		Message: fmt.Sprintf("User %s successfully connected", authData.User.DisplayName),
+		Action:  "AppixAuthentication",
+	})
+
 	return authToken, nil
 }
 
