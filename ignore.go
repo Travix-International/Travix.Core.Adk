@@ -73,7 +73,7 @@ func init() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		ignoredFileName := strings.Trim(scanner.Text(), " ")
-		if ignoredFileName != "" && strings.HasPrefix(ignoredFileName, "#") {
+		if ignoredFileName != "" && !strings.HasPrefix(ignoredFileName, "#") {
 			ignoredFileNames = append(ignoredFileNames, ignoredFileName)
 		}
 	}
