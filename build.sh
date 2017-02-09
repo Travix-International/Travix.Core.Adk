@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-TRAVIX_LOGGER_URL${$TRAVIX_LOGGER_URL:-"https://frogger.travix.com/logs/appixlog"}
+TRAVIX_LOGGER_URL${TRAVIX_LOGGER_URL:-"https://frogger.travix.com/logs/appixlog"}
 
 BUILD_DATE=`LC_ALL=en_US.utf8 date -u +"%a.%B.%d.%Y.%R:%S.%z.%Z"`
 : "${TRAVIS_TAG:=0.0.0}"
