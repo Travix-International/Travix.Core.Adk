@@ -11,6 +11,8 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
+var logger = appixLogger.NewAppixLogger()
+
 // RegisterSubmit registers the 'submit' command.
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	const submitTemplateURI = "%s/apps/%s/submit"
@@ -19,6 +21,8 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
+			defer logger.Stop()
+
 			environment := args.TargetEnv
 
 			if environment == "" {
@@ -28,7 +32,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 			if err != nil {
-				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
 					Type:    "error",
 					Message: fmt.Sprintf("Could not prepare the app folder for uploading: %s", err.Error()),
 					Action:  "AppixSubmit",
@@ -39,7 +43,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			zapFile, err := createZapPackage(appPath, args.Verbose)
 
 			if err != nil {
-				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
 					Type:    "error",
 					Message: fmt.Sprintf("Could not create zap package: %s", err.Error()),
 					Action:  "AppixSubmit",
@@ -55,7 +59,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config)
 
 			if err != nil {
-				appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
 					Type:    "error",
 					Message: fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()),
 					Action:  "AppixSubmit",
@@ -63,7 +67,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 				return err
 			}
 
-			appixLogger.AddMessageToQueue(appixLogger.LoggerNotification{
+			logger.AddMessageToQueue(appixLogger.LoggerNotification{
 				Type:    "error",
 				Message: "App has been submitted successfully.",
 				Action:  "AppixSubmit",
