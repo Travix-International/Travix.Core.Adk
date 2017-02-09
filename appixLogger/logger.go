@@ -64,10 +64,11 @@ func (l *Logger) log(notification LoggerNotification, done chan bool) {
 }
 
 func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
+	// log on stdout to kkep the user aware of what's going on
+	log.Printf("[appix:%s] %s\n", notification.Action, notification.Message)
+
 	if l.Loggy != nil {
 		l.LoggerNotificationQueue <- notification
-	} else {
-		log.Printf("[appix:%s] %s\n", notification.Action, notification.Message)
 	}
 }
 
