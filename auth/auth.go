@@ -73,7 +73,7 @@ type ProfileBody struct {
 	Profile    Profile
 }
 
-var logger = appixLogger.NewAppixLogger()
+var logger = appixLogger.NewAppixLogger("")
 
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.

@@ -16,6 +16,7 @@ if (Test-Path env:APPVEYOR_BUILD_VERSION) {
     $BUILD_VERSION = "0.0.0"
     $GIT_HASH = "000"
 }
+
 $BUILD_DATE = (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %a.%B.%d.%Y.%R:%S) + ".+0000.UTC"
 $APP_LDFLAGS="-s
 -X main.version=$BUILD_VERSION
@@ -26,7 +27,8 @@ $APP_LDFLAGS="-s
 -X main.travixFirebaseDatabaseUrl=$TRAVIX_FIREBASE_DATABASE_URL
 -X main.travixFirebaseStorageBucket=$TRAVIX_FIREBASE_STORAGE_BUCKET
 -X main.travixFirebaseMessagingSenderId=$TRAVIX_FIREBASE_MESSAGING_SENDER_ID
--X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL"
+-X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
+-X main.travixLoggerUrl=$TRAVIX_LOGGER_URL"
 Write-Output "Load flags will be $APP_LDFLAGS"
 Write-Output "AV vars are $env:APPVEYOR_BUILD_VERSION / $env:APPVEYOR_REPO_COMMIT"
 

@@ -11,7 +11,7 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-var logger = appixLogger.NewAppixLogger()
+var logger = appixLogger.NewAppixLogger("")
 
 // RegisterSubmit registers the 'submit' command.
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
