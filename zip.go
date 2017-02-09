@@ -25,9 +25,11 @@ func zipFolder(source, target string, includePathInZipFn filePickerFunc) error {
 			return err
 		}
 
-		path = strings.Replace(path, "\\", "/", -1)
-		sourcePath := strings.Replace(source, "\\", "/", -1)
-		relPath := strings.TrimPrefix(path, sourcePath)
+		relPath, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+
 		isDir := info.IsDir()
 
 		if relPath == "" {
@@ -52,7 +54,7 @@ func zipFolder(source, target string, includePathInZipFn filePickerFunc) error {
 			return err
 		}
 
-		header.Name = relPath
+		header.Name = strings.Replace(relPath, string(os.PathSeparator), "/", -1)
 		header.Method = archiveZip.Deflate
 		writer, err := archive.CreateHeader(header)
 		if err != nil {
