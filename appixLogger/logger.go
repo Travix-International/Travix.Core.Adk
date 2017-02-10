@@ -69,21 +69,19 @@ func getDefaultMeta(messageType string, applicationGroup string) map[string]stri
 	return defaultMeta
 }
 
-func (l *Logger) log(notification LoggerNotification, done chan bool) {
-	go func(n LoggerNotification) {
-		var err error
+func (l *Logger) log(n LoggerNotification) {
+	var err error
 
-		if n.Type == "error" {
-			err = l.Loggy.ErrorWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
-		} else {
-			err = l.Loggy.InfoWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
-		}
+	if n.Type == "error" {
+		err = l.Loggy.ErrorWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+	} else {
+		err = l.Loggy.InfoWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+	}
 
-		if err != nil {
-			log.Printf("An error occured when trying to log error: %s\n", err.Error())
-		}
-		done <- true
-	}(notification)
+	if err != nil {
+		log.Printf("An error occured when trying to log error: %s\n", err.Error())
+	}
+	// done <- true
 }
 
 // AddMessageToQueue : Add a new LoggerNotification object to the Queue and print on stdout the message
@@ -102,9 +100,9 @@ func (l *Logger) Start() {
 		for {
 			select {
 			case notification := <-l.LoggerNotificationQueue:
-				done := make(chan bool)
-				l.log(notification, done)
-				<-done
+				// done := make(chan bool)
+				l.log(notification)
+				// <-done
 			case <-l.Quit:
 				return
 			}
@@ -114,9 +112,7 @@ func (l *Logger) Start() {
 
 // Stop : kill the logger routine
 func (l *Logger) Stop() {
-	go func() {
-		l.Quit <- true
-	}()
+	l.Quit <- true
 }
 
 // NewAppixLogger : create a new instance of Logger if doesn't exist already. Otherwise return the actual instance
