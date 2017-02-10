@@ -11,10 +11,12 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-var logger = appixLogger.NewAppixLogger("")
+var logger *appixLogger.Logger
 
 // RegisterSubmit registers the 'submit' command.
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+	logger = appixLogger.NewAppixLogger(config.TravixLoggerUrl)
+
 	const submitTemplateURI = "%s/apps/%s/submit"
 
 	var appPath string // path to the App folder

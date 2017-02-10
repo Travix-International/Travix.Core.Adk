@@ -17,13 +17,13 @@ APP_LDFLAGS="-s
 -X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
 -X main.travixLoggerUrl=$TRAVIX_LOGGER_URL"
 
-echo "Building Windows binary..."
-GOARCH=amd64 GOOS=windows go build -ldflags "$APP_LDFLAGS" -o bin/appix.exe -i ./cmd/appix
+#echo "Building Windows binary..."
+#GOARCH=amd64 GOOS=windows go build -ldflags "$APP_LDFLAGS" -o bin/appix.exe -i ./cmd/appix
 
 echo "Building Mac binary..."
 GOARCH=amd64 GOOS=darwin go build -ldflags "$APP_LDFLAGS" -o bin/appix-mac -i ./cmd/appix
 
-echo "Building Linux binary..."
-GOARCH=amd64 GOOS=linux go build -ldflags "$APP_LDFLAGS" -o bin/appix-linux -i ./cmd/appix
+#echo "Building Linux binary..."
+#GOARCH=amd64 GOOS=linux go build -ldflags "$APP_LDFLAGS" -o bin/appix-linux -i ./cmd/appix
 
 echo "Done!"
