@@ -44,6 +44,8 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 			break
 		}
 
+		log.Printf("An error occured when trying to submit the application: %s\n", err.Error())
+
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
 			time.Sleep(time.Duration(wait) * time.Millisecond)
