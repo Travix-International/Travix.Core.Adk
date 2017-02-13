@@ -73,13 +73,9 @@ type ProfileBody struct {
 	Profile    Profile
 }
 
-var logger *appixLogger.Logger
-
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.
-func LoadAuthToken(config config.Config) (TokenBody, error) {
-	logger = appixLogger.NewAppixLogger(config.TravixLoggerUrl)
-
+func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody, error) {
 	firebaseAPIKey := config.FirebaseApiKey
 	authData, err := readAuthData(config.AuthFilePath)
 

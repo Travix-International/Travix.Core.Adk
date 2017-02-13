@@ -22,7 +22,7 @@ const (
 )
 
 // RegisterPush registers the 'push' command.
-func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalArgs, logger *appixLogger.Logger) {
 	var (
 		appPath       string // path to the App folder
 		noBrowser     bool   // skip opening the site in the browser
@@ -32,7 +32,7 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 
 	command := app.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return push(config, appPath, noBrowser, waitInSeconds, localFrontend, args)
+			return push(config, appPath, noBrowser, waitInSeconds, localFrontend, args, logger)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
@@ -52,10 +52,8 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 		BoolVar(&localFrontend)
 }
 
-func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs) error {
+func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
 	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
-
-	defer logger.Stop()
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
@@ -89,7 +87,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config)
+	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config, logger)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
