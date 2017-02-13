@@ -42,6 +42,7 @@ var (
 	verbose          = false
 	localFrontend    = false
 	maxRetryAttempts = 5
+	maxTimeoutValue  = 5 // seconds
 )
 
 func main() {
@@ -110,6 +111,7 @@ func makeConfig() config.Config {
 
 		AuthServerPort:   "7001",
 		MaxRetryAttempts: maxRetryAttempts,
+		MaxTimeoutValue:  maxTimeoutValue,
 	}
 
 	return config

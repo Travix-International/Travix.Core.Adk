@@ -28,4 +28,5 @@ type Config struct {
 
 	AuthServerPort   string
 	MaxRetryAttempts int
+	MaxTimeoutValue  int
 }

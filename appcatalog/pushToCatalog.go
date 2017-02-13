@@ -31,7 +31,10 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if uploadURI, err = doPush(req, verbose); err == nil {
+		requestTimeout := float64(((attempt + 1) * config.MaxTimeoutValue) * 1000)
+		durationRequestTimeout := time.Duration(requestTimeout) * time.Millisecond
+
+		if uploadURI, err = doPush(req, durationRequestTimeout, verbose); err == nil {
 			break
 		}
 
@@ -48,11 +51,13 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 	return
 }
 
-func doPush(req *http.Request, verbose bool) (uploadURI string, err error) {
+func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (uploadURI string, err error) {
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: maxTimeoutValue,
 	}
+
 	res, err := client.Do(req)
+
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
 		return "", err
