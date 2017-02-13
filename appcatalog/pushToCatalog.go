@@ -37,6 +37,8 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 			break
 		}
 
+		log.Printf("An error occured when trying to push the application: %s\n", err.Error())
+
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
 			time.Sleep(time.Duration(wait) * time.Millisecond)
