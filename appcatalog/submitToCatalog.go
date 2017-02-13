@@ -32,7 +32,10 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 
 		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if acceptanceQueryURL, err = doSubmit(req, verbose); err == nil {
+		requestTimeout := float64(((attempt + 1) * config.MaxTimeoutValue) * 1000)
+		durationRequestTimeout := time.Duration(requestTimeout) * time.Millisecond
+
+		if acceptanceQueryURL, err = doSubmit(req, durationRequestTimeout, verbose); err == nil {
 			break
 		}
 
@@ -45,11 +48,13 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 	return
 }
 
-func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err error) {
+func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (acceptanceQueryURL string, err error) {
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: maxTimeoutValue,
 	}
+
 	res, err := client.Do(req)
+
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return "", err
