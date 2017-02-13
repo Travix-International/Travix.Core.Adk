@@ -72,6 +72,11 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 		return "", fmt.Errorf("Authentication error")
 	}
 
+	if res.StatusCode == 504 || res.StatusCode == 408 {
+		log.Printf("The AppCatalog was too long to respond (status code %v)", res.StatusCode)
+		return "", fmt.Errorf("Timeout error")
+	}
+
 	body, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 
