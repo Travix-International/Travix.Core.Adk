@@ -25,8 +25,6 @@ package appixLogger
 import (
 	"log"
 
-	"sync"
-
 	loggy "github.com/Travix-International/logger"
 )
 
@@ -44,9 +42,6 @@ type Logger struct {
 	Quit                    chan bool
 	loggerURL               string
 }
-
-var once sync.Once
-var instance *Logger
 
 func createHTTPTransport(url string) *loggy.Transport {
 	formatter := loggy.NewJSONFormat()
@@ -81,13 +76,12 @@ func (l *Logger) log(n LoggerNotification) {
 	if err != nil {
 		log.Printf("An error occured when trying to log error: %s\n", err.Error())
 	}
-	// done <- true
 }
 
 // AddMessageToQueue : Add a new LoggerNotification object to the Queue and print on stdout the message
 func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
 	// log on stdout to kkep the user aware of what's going on
-	log.Printf("[appix:%s] %s\n", notification.Action, notification.Message)
+	log.Printf("%s: %s\n", notification.Action, notification.Message)
 
 	if l.Loggy != nil {
 		l.LoggerNotificationQueue <- notification
@@ -117,19 +111,16 @@ func (l *Logger) Stop() {
 
 // NewAppixLogger : create a new instance of Logger if doesn't exist already. Otherwise return the actual instance
 func NewAppixLogger(url string) *Logger {
-	once.Do(func() {
-		meta := make(map[string]string)
-		myLogger, _ := loggy.New(meta)
+	meta := make(map[string]string)
+	myLogger, _ := loggy.New(meta)
 
-		if myLogger != nil {
-			myLogger.AddTransport(createHTTPTransport(url))
-		}
+	if myLogger != nil {
+		myLogger.AddTransport(createHTTPTransport(url))
+	}
 
-		instance = &Logger{
-			LoggerNotificationQueue: make(chan LoggerNotification),
-			Quit:  make(chan bool),
-			Loggy: myLogger,
-		}
-	})
-	return instance
+	return &Logger{
+		LoggerNotificationQueue: make(chan LoggerNotification),
+		Quit:  make(chan bool),
+		Loggy: myLogger,
+	}
 }
