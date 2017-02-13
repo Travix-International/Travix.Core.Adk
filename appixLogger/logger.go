@@ -94,9 +94,7 @@ func (l *Logger) Start() {
 		for {
 			select {
 			case notification := <-l.LoggerNotificationQueue:
-				// done := make(chan bool)
 				l.log(notification)
-				// <-done
 			case <-l.Quit:
 				return
 			}
