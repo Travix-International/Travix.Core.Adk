@@ -68,7 +68,7 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 	}
 
 	if res.StatusCode == 504 || res.StatusCode == 408 {
-		log.Printf("The AppCatalog was too long to respond (status code %v)", res.StatusCode)
+		log.Printf("The AppCatalog request timed out (status code %v)", res.StatusCode)
 		return "", fmt.Errorf("Timeout error")
 	}
 
