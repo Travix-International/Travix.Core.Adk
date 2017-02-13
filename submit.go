@@ -14,7 +14,10 @@ import (
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	const submitTemplateURI = "%s/apps/%s/submit"
 
-	var appPath string // path to the App folder
+	var (
+		appPath  string // path to the App folder
+		noVerify bool
+	)
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
@@ -24,7 +27,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 				environment = "dev"
 			}
 
-			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
+			appPath, appName, appManifestFile, err := prepareAppUpload(appPath, noVerify)
 
 			if err != nil {
 				log.Println("Could not prepare the app folder for uploading")
@@ -62,4 +65,8 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 	command.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&appPath)
+
+	command.Flag("noVerify", "Appix won't run the tests.").
+		Default("false").
+		BoolVar(&noVerify)
 }

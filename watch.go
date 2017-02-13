@@ -42,6 +42,7 @@ const (
 var (
 	appPath      string
 	noBrowser    bool
+	noVerify     bool
 	watcherState = waiting
 )
 
@@ -74,7 +75,7 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 			livereload.StartServer()
 
 			// Immediately push once, and then start watching.
-			doPush(config, args, true, localFrontend, nil)
+			doPush(config, args, true, false, localFrontend, nil)
 
 			livereload.SendReload()
 
@@ -115,12 +116,12 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 
 					log.Println("File change detected, executing appix push.")
 
-					go doPush(config, args, false, localFrontend, pushDone)
+					go doPush(config, args, false, false, localFrontend, pushDone)
 				case <-pushDone:
 					if watcherState == pushingAndGotEvent {
 						// A change event arrived while the previous push was happening, we push again.
 						watcherState = pushing
-						go doPush(config, args, false, localFrontend, pushDone)
+						go doPush(config, args, false, false, localFrontend, pushDone)
 					} else {
 						watcherState = waiting
 						log.Println("Push done, watching for file changes.")
@@ -137,12 +138,16 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 		Default("false").
 		BoolVar(&noBrowser)
 
+	command.Flag("noVerify", "Appix won't run the tests.").
+		Default("false").
+		BoolVar(&noVerify)
+
 	command.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
 		BoolVar(&localFrontend)
 }
 
-func doPush(config config.Config, args *GlobalArgs, openBrowser bool, localFrontend bool, pushDone chan<- int) {
-	push(config, appPath, !openBrowser, 180, localFrontend, args)
+func doPush(config config.Config, args *GlobalArgs, openBrowser bool, noVerifyFlag bool, localFrontend bool, pushDone chan<- int) {
+	push(config, appPath, !openBrowser, noVerifyFlag, 180, localFrontend, args)
 
 	if !openBrowser {
 		livereload.SendReload()

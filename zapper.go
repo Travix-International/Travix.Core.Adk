@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func prepareAppUpload(configAppPath string) (appPath string, appName string, manifestPath string, err error) {
+func prepareAppUpload(configAppPath string, skipTest bool) (appPath string, appName string, manifestPath string, err error) {
 	if configAppPath == "" {
 		configAppPath = "."
 	}
@@ -29,7 +29,9 @@ func prepareAppUpload(configAppPath string) (appPath string, appName string, man
 	}
 
 	type AppManifestName struct {
-		Name string `json:"name"`
+		Name  string  `json:"name"`
+		Build []Stage `json:"build"`
+		Tests []Stage `json:"tests"`
 	}
 
 	var manifestObject AppManifestName
@@ -51,6 +53,24 @@ func prepareAppUpload(configAppPath string) (appPath string, appName string, man
 	if manifestObject.Name == "" {
 		log.Println("The name is missing from the app manifest")
 		return "", "", "", errors.New("The name is missing from the app manifest")
+	}
+
+	if len(manifestObject.Tests) > 0 && skipTest == false {
+		// create a pool of stages
+		// wait for the return value of chan bool (a boolean)
+		rTests := <-CreateStagePool(manifestObject.Tests)
+		if rTests {
+			return "", "", "", errors.New("The tests are failing. Please check the output")
+		}
+	}
+
+	if len(manifestObject.Build) > 0 {
+		// create a pool of stages
+		// wait for the return value of chan bool (a boolean)
+		bTests := <-CreateStagePool(manifestObject.Build)
+		if bTests {
+			return "", "", "", errors.New("The build is failing. Please check the ouput")
+		}
 	}
 
 	appName = manifestObject.Name
