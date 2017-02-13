@@ -25,12 +25,13 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 		"zapfile":  zapFile,
 	}
 
-	if req, err = prepare(submitURI, files, config, verbose); err != nil {
-		return "", err
-	}
-
 	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
+		if req, err = prepare(submitURI, files, config, verbose); err != nil {
+			return "", err
+		}
+
 		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
+
 		if acceptanceQueryURL, err = doSubmit(req, verbose); err == nil {
 			break
 		}
@@ -64,6 +65,8 @@ func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err e
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+
 	if err != nil {
 		log.Println("Error reading response from App Catalog!")
 		return "", err
@@ -96,7 +99,6 @@ func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err e
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]
-
 	return acceptanceQueryURLPath, nil
 
 }
