@@ -29,9 +29,9 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{
-					Type:    "error",
-					Message: fmt.Sprintf("Could not prepare the app folder for uploading: %s", err.Error()),
-					Action:  "AppixSubmit",
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not prepare the app folder for uploading: %s", err.Error()),
+					LogEvent: "AppixSubmit",
 				})
 				return err
 			}
@@ -40,9 +40,9 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{
-					Type:    "error",
-					Message: fmt.Sprintf("Could not create zap package: %s", err.Error()),
-					Action:  "AppixSubmit",
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not create zap package: %s", err.Error()),
+					LogEvent: "AppixSubmit",
 				})
 				return err
 			}
@@ -56,17 +56,17 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{
-					Type:    "error",
-					Message: fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()),
-					Action:  "AppixSubmit",
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()),
+					LogEvent: "AppixSubmit",
 				})
 				return err
 			}
 
 			logger.AddMessageToQueue(appixLogger.LoggerNotification{
-				Type:    "error",
-				Message: "App has been submitted successfully.",
-				Action:  "AppixSubmit",
+				Level:    "error",
+				Message:  "App has been submitted successfully.",
+				LogEvent: "AppixSubmit",
 			})
 
 			if acceptanceQueryURLPath != "" {

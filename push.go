@@ -66,9 +66,9 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Could not create zap package: %s", err.Error()),
-			Action:  "AppixPush",
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not create zap package: %s", err.Error()),
+			LogEvent: "AppixPush",
 		})
 		return err
 	}
@@ -77,9 +77,9 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Could not get the session id: %s", err.Error()),
-			Action:  "AppixPush",
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not get the session id: %s", err.Error()),
+			LogEvent: "AppixPush",
 		})
 		return err
 	}
@@ -93,9 +93,9 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Error during pushing the manifest to the App Catalog: %s", err.Error()),
-			Action:  "AppixPush",
+			Level:    "error",
+			Message:  fmt.Sprintf("Error during pushing the manifest to the App Catalog: %s", err.Error()),
+			LogEvent: "AppixPush",
 		})
 		return err
 	}
@@ -119,9 +119,9 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
-			Action:  "AppixPush",
+			Level:    "error",
+			Message:  fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
+			LogEvent: "AppixPush",
 		})
 		return err
 	}
@@ -130,9 +130,9 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 
 	if args.Verbose {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "log",
-			Message: "Push command has completed",
-			Action:  "AppixPush",
+			Level:    "log",
+			Message:  "Push command has completed",
+			LogEvent: "AppixPush",
 		})
 	}
 

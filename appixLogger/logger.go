@@ -30,9 +30,9 @@ import (
 
 // LoggerNotification : The structure describing a notification to log
 type LoggerNotification struct {
-	Message string
-	Action  string
-	Type    string
+	Message  string
+	LogEvent string
+	Level    string
 }
 
 // Logger : The structure of the logger singleton
@@ -67,10 +67,10 @@ func getDefaultMeta(messageType string, applicationGroup string) map[string]stri
 func (l *Logger) log(n LoggerNotification) {
 	var err error
 
-	if n.Type == "error" {
-		err = l.Loggy.ErrorWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+	if n.Level == "error" {
+		err = l.Loggy.ErrorWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
 	} else {
-		err = l.Loggy.InfoWithMeta(n.Action, n.Message, getDefaultMeta(n.Action, ""))
+		err = l.Loggy.InfoWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
 	}
 
 	if err != nil {
@@ -81,7 +81,7 @@ func (l *Logger) log(n LoggerNotification) {
 // AddMessageToQueue : Add a new LoggerNotification object to the Queue and print on stdout the message
 func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
 	// log on stdout to kkep the user aware of what's going on
-	log.Printf("%s: %s\n", notification.Action, notification.Message)
+	log.Printf("%s: %s\n", notification.LogEvent, notification.Message)
 
 	if l.Loggy != nil {
 		l.LoggerNotificationQueue <- notification

@@ -81,9 +81,9 @@ func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody,
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Could not find authentication data: %s", err.Error()),
-			Action:  "AppixAuthentication",
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not find authentication data: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
 		})
 		return TokenBody{}, err
 	}
@@ -98,9 +98,9 @@ func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody,
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Could not retrieve a new token: %s", err.Error()),
-			Action:  "AppixAuthentication",
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not retrieve a new token: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
 		})
 		return TokenBody{}, err
 	}
@@ -111,17 +111,17 @@ func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody,
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Type:    "error",
-			Message: fmt.Sprintf("Could not save data: %s", err.Error()),
-			Action:  "AppixAuthentication",
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not save data: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
 		})
 		return TokenBody{}, err
 	}
 
 	logger.AddMessageToQueue(appixLogger.LoggerNotification{
-		Type:    "info",
-		Message: fmt.Sprintf("User %s successfully connected", authData.User.DisplayName),
-		Action:  "AppixAuthentication",
+		Level:    "info",
+		Message:  fmt.Sprintf("User %s successfully connected", authData.User.DisplayName),
+		LogEvent: "AppixAuthentication",
 	})
 
 	return authToken, nil

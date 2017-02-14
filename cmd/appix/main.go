@@ -44,8 +44,6 @@ var (
 	maxRetryAttempts = 5
 )
 
-var running = make(chan bool)
-
 func main() {
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
@@ -71,10 +69,6 @@ func main() {
 		BoolVar(&args.Verbose)
 
 	log.Println("Registering commands")
-
-	// appixLogger
-	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
-	logger.Start()
 
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
