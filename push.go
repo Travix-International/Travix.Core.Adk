@@ -78,7 +78,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config)
+	uploadURI, err := appcatalog.PushToCatalog(pushURI, args.Timeout, appManifestFile, args.Verbose, config)
 
 	if err != nil {
 		log.Println("Error during pushing the manifest to the App Catalog.")
