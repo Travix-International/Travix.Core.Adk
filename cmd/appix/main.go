@@ -49,6 +49,14 @@ var running = make(chan bool)
 func main() {
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
+	// Context
+	config := makeConfig()
+
+	// appixLogger
+	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
+	logger.Start()
+	defer logger.Stop()
+
 	args := appix.GlobalArgs{}
 
 	// App
@@ -62,8 +70,7 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 
-	// Context
-	config := makeConfig()
+	log.Println("Registering commands")
 
 	// appixLogger
 	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
@@ -71,14 +78,13 @@ func main() {
 
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
-	appix.RegisterPush(app, config, &args)
-	appix.RegisterSubmit(app, config, &args)
+	appix.RegisterPush(app, config, &args, logger)
+	appix.RegisterSubmit(app, config, &args, logger)
 	appix.RegisterVersion(app, config)
-	appix.RegisterWatch(app, config, &args)
-	appix.RegisterWhoami(app, config, &args)
+	appix.RegisterWatch(app, config, &args, logger)
+	appix.RegisterWhoami(app, config, &args, logger)
 
-	// kingpin config
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+	app.Parse(os.Args[1:])
 }
 
 func makeConfig() config.Config {

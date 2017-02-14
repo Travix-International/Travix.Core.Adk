@@ -11,20 +11,14 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-var logger *appixLogger.Logger
-
 // RegisterSubmit registers the 'submit' command.
-func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
-	logger = appixLogger.NewAppixLogger(config.TravixLoggerUrl)
-
+func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs, logger *appixLogger.Logger) {
 	const submitTemplateURI = "%s/apps/%s/submit"
 
 	var appPath string // path to the App folder
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			defer logger.Stop()
-
 			environment := args.TargetEnv
 
 			if environment == "" {
@@ -58,7 +52,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			rootURI := config.CatalogURIs[environment]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 
-			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config)
+			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config, logger)
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{
