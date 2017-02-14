@@ -68,7 +68,7 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 	app.Flag("timeout", "Set the maximum timeout for the request").
-		Default("5").
+		Default("10").
 		IntVar(&args.Timeout)
 
 	log.Println("Registering commands")
