@@ -14,7 +14,8 @@ APP_LDFLAGS="-s
 -X main.travixFirebaseDatabaseUrl=$TRAVIX_FIREBASE_DATABASE_URL
 -X main.travixFirebaseStorageBucket=$TRAVIX_FIREBASE_STORAGE_BUCKET
 -X main.travixFirebaseMessagingSenderId=$TRAVIX_FIREBASE_MESSAGING_SENDER_ID
--X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL"
+-X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
+-X main.travixLoggerUrl=$TRAVIX_LOGGER_URL"
 
 echo "Building Windows binary..."
 GOARCH=amd64 GOOS=windows go build -ldflags "$APP_LDFLAGS" -o bin/appix.exe -i ./cmd/appix

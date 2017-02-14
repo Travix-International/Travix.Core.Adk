@@ -24,6 +24,7 @@ type Config struct {
 	FirebaseDatabaseUrl       string
 	FirebaseStorageBucket     string
 	FirebaseMessagingSenderId string
+	TravixLoggerUrl           string
 
 	AuthServerPort   string
 	MaxRetryAttempts int

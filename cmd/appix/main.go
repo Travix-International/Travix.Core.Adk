@@ -10,6 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/appix"
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -26,6 +27,7 @@ var (
 	travixFirebaseStorageBucket     string
 	travixFirebaseMessagingSenderId string
 	travixDeveloperProfileUrl       string
+	travixLoggerUrl                 string
 )
 
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
@@ -45,6 +47,14 @@ var (
 func main() {
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
 
+	// Context
+	config := makeConfig()
+
+	// appixLogger
+	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
+	logger.Start()
+	defer logger.Stop()
+
 	args := appix.GlobalArgs{}
 
 	// App
@@ -58,19 +68,17 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 
-	// Context
-	config := makeConfig()
+	log.Println("Registering commands")
 
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
-	appix.RegisterPush(app, config, &args)
-	appix.RegisterSubmit(app, config, &args)
+	appix.RegisterPush(app, config, &args, logger)
+	appix.RegisterSubmit(app, config, &args, logger)
 	appix.RegisterVersion(app, config)
-	appix.RegisterWatch(app, config, &args)
-	appix.RegisterWhoami(app, config, &args)
+	appix.RegisterWatch(app, config, &args, logger)
+	appix.RegisterWhoami(app, config, &args, logger)
 
-	// kingpin config
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+	app.Parse(os.Args[1:])
 }
 
 func makeConfig() config.Config {
@@ -98,6 +106,7 @@ func makeConfig() config.Config {
 		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
 		FirebaseStorageBucket:     travixFirebaseStorageBucket,
 		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+		TravixLoggerUrl:           travixLoggerUrl,
 
 		AuthServerPort:   "7001",
 		MaxRetryAttempts: maxRetryAttempts,

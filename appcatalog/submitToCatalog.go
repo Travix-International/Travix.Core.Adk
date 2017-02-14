@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -18,7 +19,7 @@ type submitResponse struct {
 }
 
 // SubmitToCatalog submits the specified app to the AppCatalog.
-func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, verbose bool, config config.Config) (acceptanceQueryURL string, err error) {
+func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (acceptanceQueryURL string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -26,7 +27,7 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 	}
 
 	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
-		if req, err = prepare(submitURI, files, config, verbose); err != nil {
+		if req, err = prepare(submitURI, files, config, verbose, logger); err != nil {
 			return "", err
 		}
 
