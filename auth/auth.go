@@ -3,12 +3,14 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -73,11 +75,16 @@ type ProfileBody struct {
 
 // LoadAuthToken checks if the user is already logged in, it tries to load the locally stored Authentication token, and refreshes it.
 // If the user is not logged in, it returns an error.
-func LoadAuthToken(config config.Config) (TokenBody, error) {
+func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody, error) {
 	firebaseAPIKey := config.FirebaseApiKey
 	authData, err := readAuthData(config.AuthFilePath)
 
 	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not find authentication data: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
+		})
 		return TokenBody{}, err
 	}
 
@@ -90,6 +97,11 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	authToken, err := authData.refreshToken(firebaseAPIKey)
 
 	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not retrieve a new token: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
+		})
 		return TokenBody{}, err
 	}
 
@@ -98,8 +110,19 @@ func LoadAuthToken(config config.Config) (TokenBody, error) {
 	err = saveAuthData(config.AuthFilePath, authData)
 
 	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not save data: %s", err.Error()),
+			LogEvent: "AppixAuthentication",
+		})
 		return TokenBody{}, err
 	}
+
+	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+		Level:    "info",
+		Message:  fmt.Sprintf("User %s successfully connected", authData.User.DisplayName),
+		LogEvent: "AppixAuthentication",
+	})
 
 	return authToken, nil
 }

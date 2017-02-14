@@ -36,7 +36,7 @@ func RegisterInit(app *kingpin.Application, config config.Config, args *GlobalAr
 			// anyting special. The command line handling has already validated that the folder actually exists
 			isEmptyPath, err := isEmptyPath(appPathAbsolute)
 			if !isEmptyPath || err != nil {
-				log.Printf("The specified appPath '%s' does not appear to be an empty directory\n%v", appPathRelative, err)
+				log.Printf("The specified appPath '%s' does not appear to be an empty directory. Error: %v", appPathRelative, err)
 				return err
 			}
 

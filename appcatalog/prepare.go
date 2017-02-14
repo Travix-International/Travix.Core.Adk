@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
 )
 
-func prepare(uri string, files map[string]string, config config.Config, verbose bool) (req *http.Request, err error) {
+func prepare(uri string, files map[string]string, config config.Config, verbose bool, logger *appixLogger.Logger) (req *http.Request, err error) {
 	if verbose {
 		log.Println("Posting files to the App Catalog: " + uri)
 	}
@@ -20,12 +21,12 @@ func prepare(uri string, files map[string]string, config config.Config, verbose 
 		return
 	}
 
-	err = addAuthenticationHeader(req, config)
+	err = addAuthenticationHeader(req, config, logger)
 	return
 }
 
-func addAuthenticationHeader(req *http.Request, config config.Config) error {
-	token, err := auth.LoadAuthToken(config)
+func addAuthenticationHeader(req *http.Request, config config.Config, logger *appixLogger.Logger) error {
+	token, err := auth.LoadAuthToken(config, logger)
 
 	if err == nil {
 		req.Header.Set("Authorization", token.TokenType+" "+token.IdToken)

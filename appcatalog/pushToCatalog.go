@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -17,14 +18,14 @@ const (
 )
 
 // PushToCatalog pushes the specified app to the AppCatalog.
-func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose bool, config config.Config) (uploadURI string, err error) {
+func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (uploadURI string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
 	}
 
 	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
-		if req, err = prepare(pushURI, files, config, verbose); err != nil {
+		if req, err = prepare(pushURI, files, config, verbose, logger); err != nil {
 			return "", err
 		}
 

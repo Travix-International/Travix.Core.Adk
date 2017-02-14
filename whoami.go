@@ -6,15 +6,16 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
 )
 
 // RegisterWhoami registers the 'whoami' command.
-func RegisterWhoami(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+func RegisterWhoami(app *kingpin.Application, config config.Config, args *GlobalArgs, logger *appixLogger.Logger) {
 	app.Command("whoami", "Displays logged in user's information").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			authToken, err := auth.LoadAuthToken(config)
+			authToken, err := auth.LoadAuthToken(config, logger)
 
 			if err != nil {
 				fmt.Println("You are not logged in.\nYou can sign in by using 'appix login'.")

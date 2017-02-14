@@ -7,11 +7,12 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/Travix-International/appix/appcatalog"
+	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/config"
 )
 
 // RegisterSubmit registers the 'submit' command.
-func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
+func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs, logger *appixLogger.Logger) {
 	const submitTemplateURI = "%s/apps/%s/submit"
 
 	var appPath string // path to the App folder
@@ -27,14 +28,22 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 			if err != nil {
-				log.Println("Could not prepare the app folder for uploading")
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not prepare the app folder for uploading: %s", err.Error()),
+					LogEvent: "AppixSubmit",
+				})
 				return err
 			}
 
 			zapFile, err := createZapPackage(appPath, args.Verbose)
 
 			if err != nil {
-				log.Println("Could not create zap package!")
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not create zap package: %s", err.Error()),
+					LogEvent: "AppixSubmit",
+				})
 				return err
 			}
 
@@ -43,13 +52,22 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			rootURI := config.CatalogURIs[environment]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 
-			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, args.Timeout, appManifestFile, zapFile, args.Verbose, config)
+			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, args.Timeout, appManifestFile, zapFile, args.Verbose, config, logger)
 
 			if err != nil {
+				logger.AddMessageToQueue(appixLogger.LoggerNotification{
+					Level:    "error",
+					Message:  fmt.Sprintf("Could not submit manifest to App Catalog: %s", err.Error()),
+					LogEvent: "AppixSubmit",
+				})
 				return err
 			}
 
-			log.Println("App has been submitted successfully.")
+			logger.AddMessageToQueue(appixLogger.LoggerNotification{
+				Level:    "error",
+				Message:  "App has been submitted successfully.",
+				LogEvent: "AppixSubmit",
+			})
 
 			if acceptanceQueryURLPath != "" {
 				log.Println("You can use the following query URL to get this particular version of this app:")
