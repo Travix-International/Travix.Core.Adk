@@ -52,7 +52,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			rootURI := config.CatalogURIs[environment]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 
-			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, appManifestFile, zapFile, args.Verbose, config, logger)
+			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, args.Timeout, appManifestFile, zapFile, args.Verbose, config, logger)
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{

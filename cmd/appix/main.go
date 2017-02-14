@@ -42,7 +42,6 @@ var (
 	verbose          = false
 	localFrontend    = false
 	maxRetryAttempts = 5
-	maxTimeoutValue  = 5 // seconds
 )
 
 func main() {
@@ -68,6 +67,9 @@ func main() {
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
 		BoolVar(&args.Verbose)
+	app.Flag("timeout", "Set the maximum timeout for the request").
+		Default("5").
+		IntVar(&args.Timeout)
 
 	log.Println("Registering commands")
 
@@ -111,7 +113,6 @@ func makeConfig() config.Config {
 
 		AuthServerPort:   "7001",
 		MaxRetryAttempts: maxRetryAttempts,
-		MaxTimeoutValue:  maxTimeoutValue,
 	}
 
 	return config

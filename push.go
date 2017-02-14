@@ -89,7 +89,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, appManifestFile, args.Verbose, config, logger)
+	uploadURI, err := appcatalog.PushToCatalog(pushURI, args.Timeout, appManifestFile, args.Verbose, config, logger)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{

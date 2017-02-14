@@ -19,7 +19,7 @@ type submitResponse struct {
 }
 
 // SubmitToCatalog submits the specified app to the AppCatalog.
-func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (acceptanceQueryURL string, err error) {
+func SubmitToCatalog(submitURI string, timeout int, appManifestFile string, zapFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (acceptanceQueryURL string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -33,10 +33,7 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 
 		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		requestTimeout := float64(((attempt + 1) * config.MaxTimeoutValue) * 1000)
-		durationRequestTimeout := time.Duration(requestTimeout) * time.Millisecond
-
-		if acceptanceQueryURL, err = doSubmit(req, durationRequestTimeout, verbose); err == nil {
+		if acceptanceQueryURL, err = doSubmit(req, time.Duration(timeout)*time.Second, verbose); err == nil {
 			break
 		}
 

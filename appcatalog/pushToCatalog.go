@@ -13,12 +13,8 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-const (
-	timeout = time.Duration(10 * time.Second)
-)
-
 // PushToCatalog pushes the specified app to the AppCatalog.
-func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (uploadURI string, err error) {
+func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (uploadURI string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -31,10 +27,7 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		requestTimeout := float64(((attempt + 1) * config.MaxTimeoutValue) * 1000)
-		durationRequestTimeout := time.Duration(requestTimeout) * time.Millisecond
-
-		if uploadURI, err = doPush(req, durationRequestTimeout, verbose); err == nil {
+		if uploadURI, err = doPush(req, time.Duration(timeout)*time.Second, verbose); err == nil {
 			break
 		}
 
