@@ -13,12 +13,8 @@ import (
 	"github.com/Travix-International/appix/config"
 )
 
-const (
-	timeout = time.Duration(10 * time.Second)
-)
-
 // PushToCatalog pushes the specified app to the AppCatalog.
-func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (uploadURI string, err error) {
+func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (uploadURI string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -31,13 +27,15 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if uploadURI, err = doPush(req, verbose); err == nil {
+		if uploadURI, err = doPush(req, time.Duration(timeout)*time.Second, verbose); err == nil {
 			break
 		}
 
 		if err, ok := err.(*catalogError); ok && !err.canRetry() {
 			break
 		}
+
+		log.Printf("An error occured when trying to push the application: %s\n", err.Error())
 
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
@@ -48,11 +46,13 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 	return
 }
 
-func doPush(req *http.Request, verbose bool) (uploadURI string, err error) {
+func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (uploadURI string, err error) {
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: maxTimeoutValue,
 	}
+
 	res, err := client.Do(req)
+
 	if err != nil {
 		log.Println("Call to App Catalog failed.")
 		return "", err
@@ -65,6 +65,11 @@ func doPush(req *http.Request, verbose bool) (uploadURI string, err error) {
 	if res.StatusCode == 401 || res.StatusCode == 403 {
 		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
 		return "", fmt.Errorf("Authentication error")
+	}
+
+	if res.StatusCode == 504 || res.StatusCode == 408 {
+		log.Printf("The AppCatalog request timed out (status code %v)", res.StatusCode)
+		return "", fmt.Errorf("Timeout error")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
