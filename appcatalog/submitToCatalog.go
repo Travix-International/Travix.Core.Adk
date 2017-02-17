@@ -37,6 +37,10 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 			break
 		}
 
+		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			break
+		}
+
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
 			time.Sleep(time.Duration(wait) * time.Millisecond)
@@ -96,7 +100,7 @@ func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err e
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Submit failed, App Catalog returned statuscode %v", res.StatusCode)
+		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]

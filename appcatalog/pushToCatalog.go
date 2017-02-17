@@ -35,6 +35,10 @@ func PushToCatalog(pushURI string, appManifestFile string, verbose bool, config 
 			break
 		}
 
+		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			break
+		}
+
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
 			time.Sleep(time.Duration(wait) * time.Millisecond)
@@ -95,7 +99,7 @@ func doPush(req *http.Request, verbose bool) (uploadURI string, err error) {
 	if res.StatusCode == http.StatusOK {
 		log.Println("App has been pushed successfully.")
 	} else {
-		return "", fmt.Errorf("Push failed, App Catalog returned status code %v", res.StatusCode)
+		return "", &catalogError{operation: "Push", statusCode: res.StatusCode}
 	}
 
 	return responseObject.Links["upload"], nil
