@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 type jsonEntry struct {
@@ -24,6 +26,10 @@ var (
 	ErrNoMessage = errors.New("No Message!")
 )
 
+func escapeSpecialChars(str string) string {
+	return strings.TrimSuffix(strings.TrimPrefix(strconv.Quote(str), `"`), `"`)
+}
+
 func (j jsonEntry) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -39,7 +45,7 @@ func (j jsonEntry) MarshalJSON() ([]byte, error) {
 		return nil, ErrNoMessage
 	}
 
-	_, err := buf.WriteString(fmt.Sprintf("{\"%s\":\"%s\", \"%s\":\"%s\", \"%s\":\"%s\"", j.levelKey, j.Level, j.eventKey, j.Event, j.messageKey, j.Message))
+	_, err := buf.WriteString(fmt.Sprintf("{\"%s\":\"%s\", \"%s\":\"%s\", \"%s\":\"%s\"", j.levelKey, j.Level, j.eventKey, j.Event, j.messageKey, escapeSpecialChars(j.Message)))
 
 	if err != nil {
 		return nil, err
@@ -54,7 +60,7 @@ func (j jsonEntry) MarshalJSON() ([]byte, error) {
 
 		i := len(j.Meta)
 		for k, v := range j.Meta {
-			_, err = buf.WriteString(fmt.Sprintf(" \"%s\":\"%s\"", k, v))
+			_, err = buf.WriteString(fmt.Sprintf(" \"%s\":\"%s\"", k, escapeSpecialChars(v)))
 
 			if err != nil {
 				return nil, err

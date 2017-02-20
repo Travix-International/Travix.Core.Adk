@@ -11,6 +11,18 @@ func (err *catalogError) Error() string {
 	return fmt.Sprintf("%s failed, App Catalog returned status code %v\n", err.operation, err.statusCode)
 }
 
-func (err *catalogError) canRetry() bool {
+func (err *catalogError) isBadRequest() bool {
+	return err.statusCode == 400
+}
+
+func (err *catalogError) authenticationIssue() bool {
+	return err.statusCode == 401 || err.statusCode == 403
+}
+
+func (err *catalogError) serverError() bool {
 	return err.statusCode == 500 // SERVER ERROR
+}
+
+func (err *catalogError) canRetry() bool {
+	return !err.isBadRequest() && !err.serverError() && !err.authenticationIssue()
 }

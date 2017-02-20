@@ -19,7 +19,7 @@ type submitResponse struct {
 }
 
 // SubmitToCatalog submits the specified app to the AppCatalog.
-func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (acceptanceQueryURL string, err error) {
+func SubmitToCatalog(submitURI string, timeout int, appManifestFile string, zapFile string, verbose bool, config config.Config, logger *appixLogger.Logger) (acceptanceQueryURL string, err error) {
 	var req *http.Request
 	files := map[string]string{
 		"manifest": appManifestFile,
@@ -33,11 +33,15 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 
 		log.Printf("Submitting files to App Catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if acceptanceQueryURL, err = doSubmit(req, verbose); err == nil {
+		if acceptanceQueryURL, err = doSubmit(req, time.Duration(timeout)*time.Second, verbose); err == nil {
 			break
 		}
 
 		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			if err.authenticationIssue() {
+				log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", err.statusCode)
+				return "", fmt.Errorf("Authentication error")
+			}
 			break
 		}
 
@@ -50,11 +54,13 @@ func SubmitToCatalog(submitURI string, appManifestFile string, zapFile string, v
 	return
 }
 
-func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err error) {
+func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (acceptanceQueryURL string, err error) {
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: maxTimeoutValue,
 	}
+
 	res, err := client.Do(req)
+
 	if err != nil {
 		log.Println("Call to App Catalog failed!")
 		return "", err
@@ -64,9 +70,8 @@ func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err e
 		logServerResponse(res)
 	}
 
-	if res.StatusCode == 401 || res.StatusCode == 403 {
-		log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
-		return "", fmt.Errorf("Authentication error")
+	if res.StatusCode != http.StatusOK {
+		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -97,10 +102,6 @@ func doSubmit(req *http.Request, verbose bool) (acceptanceQueryURL string, err e
 		for key, val := range responseObject.Links {
 			log.Printf("\tLINK: %s\t\t%s", key, val)
 		}
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]

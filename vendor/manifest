@@ -5,7 +5,7 @@
 			"importpath": "github.com/Travix-International/logger",
 			"repository": "https://github.com/Travix-International/logger",
 			"vcs": "git",
-			"revision": "1242939754e86500bb424179d2ba44697910489b",
+			"revision": "509996f71acd7c13931daff8f104ef1552694df9",
 			"branch": "master",
 			"notests": true
 		},
