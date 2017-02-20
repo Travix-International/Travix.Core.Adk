@@ -27,12 +27,13 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 		appPath       string // path to the App folder
 		noBrowser     bool   // skip opening the site in the browser
 		waitInSeconds int    // polling timeout
+		timeout       int    // request timeout
 		localFrontend bool   // true if we open the local frontend instead of the dev server
 	)
 
 	command := app.Command("push", "Push the App in the specified folder.").
 		Action(func(parseContext *kingpin.ParseContext) error {
-			return push(config, appPath, noBrowser, waitInSeconds, localFrontend, args, logger)
+			return push(config, appPath, noBrowser, waitInSeconds, timeout, localFrontend, args, logger)
 		})
 
 	command.Arg("appPath", "path to the App folder (default: current folder).").
@@ -50,9 +51,13 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 
 	command.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
 		BoolVar(&localFrontend)
+
+	command.Flag("timeout", "Set the maximum timeout for the request").
+		Default("10").
+		IntVar(&timeout)
 }
 
-func push(config config.Config, appPath string, noBrowser bool, wait int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
+func push(config config.Config, appPath string, noBrowser bool, wait int, timeout int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
 	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
 
 	defer logger.Stop()
@@ -89,7 +94,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, localF
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
 
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, args.Timeout, appManifestFile, args.Verbose, config, logger)
+	uploadURI, err := appcatalog.PushToCatalog(pushURI, timeout, appManifestFile, args.Verbose, config, logger)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{

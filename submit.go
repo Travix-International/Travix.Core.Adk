@@ -15,7 +15,10 @@ import (
 func RegisterSubmit(app *kingpin.Application, config config.Config, args *GlobalArgs, logger *appixLogger.Logger) {
 	const submitTemplateURI = "%s/apps/%s/submit"
 
-	var appPath string // path to the App folder
+	var (
+		appPath string // path to the App folder
+		timeout int
+	)
 
 	command := app.Command("submit", "Submits the App for review.").
 		Action(func(parseContext *kingpin.ParseContext) error {
@@ -52,7 +55,7 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 			rootURI := config.CatalogURIs[environment]
 			submitURI := fmt.Sprintf(submitTemplateURI, rootURI, appName)
 
-			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, args.Timeout, appManifestFile, zapFile, args.Verbose, config, logger)
+			acceptanceQueryURLPath, err := appcatalog.SubmitToCatalog(submitURI, timeout, appManifestFile, zapFile, args.Verbose, config, logger)
 
 			if err != nil {
 				logger.AddMessageToQueue(appixLogger.LoggerNotification{
@@ -80,4 +83,8 @@ func RegisterSubmit(app *kingpin.Application, config config.Config, args *Global
 	command.Arg("appPath", "path to the App folder (default: current folder)").
 		Default(".").
 		ExistingDirVar(&appPath)
+
+	command.Flag("timeout", "Set the maximum timeout for the request").
+		Default("10").
+		IntVar(&timeout)
 }

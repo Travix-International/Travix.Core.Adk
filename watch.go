@@ -43,6 +43,7 @@ const (
 var (
 	appPath      string
 	noBrowser    bool
+	timeout      int
 	watcherState = waiting
 )
 
@@ -140,10 +141,14 @@ func RegisterWatch(app *kingpin.Application, config config.Config, args *GlobalA
 
 	command.Flag("local", "Upload to the local RWD frontend instead of the one returned by the catalog.").
 		BoolVar(&localFrontend)
+
+	command.Flag("timeout", "Set the maximum timeout for the request").
+		Default("10").
+		IntVar(&timeout)
 }
 
 func doPush(config config.Config, args *GlobalArgs, openBrowser bool, localFrontend bool, pushDone chan<- int, logger *appixLogger.Logger) {
-	push(config, appPath, !openBrowser, 180, localFrontend, args, logger)
+	push(config, appPath, !openBrowser, 180, timeout, localFrontend, args, logger)
 
 	if !openBrowser {
 		livereload.SendReload()
