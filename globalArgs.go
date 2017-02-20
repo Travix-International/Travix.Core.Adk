@@ -4,5 +4,4 @@ package appix
 type GlobalArgs struct {
 	Verbose   bool
 	TargetEnv string
-	Timeout   int
 }

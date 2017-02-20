@@ -1,9 +1,7 @@
 package appcatalog
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -31,7 +29,8 @@ func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose 
 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if uploadURI, err = doPush(req, time.Duration(timeout)*time.Second, verbose); err == nil {
+		if uploadURI, err = doRequest("Push", "upload", req, time.Duration(timeout)*time.Second, verbose); err == nil {
+			log.Println("App has been pushed successfully.")
 			break
 		}
 
@@ -50,58 +49,4 @@ func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose 
 	}
 
 	return
-}
-
-func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (uploadURI string, err error) {
-	client := &http.Client{
-		Timeout: maxTimeoutValue,
-	}
-
-	res, err := client.Do(req)
-
-	if err != nil {
-		log.Println("Call to App Catalog failed.")
-		return "", err
-	}
-
-	if verbose {
-		logServerResponse(res)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return "", &catalogError{operation: "Push", statusCode: res.StatusCode}
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	defer res.Body.Close()
-
-	if err != nil {
-		log.Println("Error reading response from App Catalog.")
-		return "", err
-	}
-
-	type PushResponse struct {
-		Links    map[string]string `json:"links"`
-		Messages []string          `json:"messages"`
-	}
-
-	var responseObject PushResponse
-	err = json.Unmarshal(body, &responseObject)
-	if err != nil {
-		if verbose {
-			log.Println(err)
-		}
-
-		return "", err
-	}
-
-	log.Printf("App Catalog returned status code %v. Response details:\n", res.StatusCode)
-
-	for _, line := range responseObject.Messages {
-		log.Printf("\t%v\n", line)
-	}
-
-	log.Println("App has been pushed successfully.")
-
-	return responseObject.Links["upload"], nil
 }

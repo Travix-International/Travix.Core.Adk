@@ -5,10 +5,11 @@ import "fmt"
 type catalogError struct {
 	operation  string
 	statusCode int
+	response   *appCatalogResponse
 }
 
 func (err *catalogError) Error() string {
-	return fmt.Sprintf("%s failed, App Catalog returned status code %v\n", err.operation, err.statusCode)
+	return fmt.Sprintf("%s failed\n%s", err.operation, err.response.getDetails(err.statusCode))
 }
 
 func (err *catalogError) isBadRequest() bool {
