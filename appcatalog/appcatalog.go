@@ -69,7 +69,6 @@ func doRequest(reqType string, link string, req *http.Request, maxTimeoutValue t
 	}
 
 	log.Print(responseObject.getDetails(res.StatusCode))
-
 	return responseObject.Links[link], nil
 }
 

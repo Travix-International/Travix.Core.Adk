@@ -29,7 +29,7 @@ func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose 
 
 		log.Printf("Pushing files to catalog. Attempt %v of %v\n", attempt, config.MaxRetryAttempts)
 
-		if uploadURI, err = doRequest("Push", "link", req, time.Duration(timeout)*time.Second, verbose); err == nil {
+		if uploadURI, err = doRequest("Push", "upload", req, time.Duration(timeout)*time.Second, verbose); err == nil {
 			log.Println("App has been pushed successfully.")
 			break
 		}
