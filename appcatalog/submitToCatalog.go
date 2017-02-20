@@ -35,7 +35,6 @@ func SubmitToCatalog(submitURI string, timeout int, appManifestFile string, zapF
 				log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", err.statusCode)
 				return "", fmt.Errorf("Authentication error")
 			}
-			// log.Print(err.Error())
 			break
 		}
 
