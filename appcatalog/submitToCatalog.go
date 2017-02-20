@@ -37,7 +37,9 @@ func SubmitToCatalog(submitURI string, timeout int, appManifestFile string, zapF
 			break
 		}
 
-		log.Printf("An error occured when trying to submit the application: %s\n", err.Error())
+		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			break
+		}
 
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
@@ -67,11 +69,6 @@ func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (a
 	if res.StatusCode == 401 || res.StatusCode == 403 {
 		log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
 		return "", fmt.Errorf("Authentication error")
-	}
-
-	if res.StatusCode == 504 || res.StatusCode == 408 {
-		log.Printf("The AppCatalog was too long to respond (status code %v)", res.StatusCode)
-		return "", fmt.Errorf("Timeout error")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -105,7 +102,7 @@ func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (a
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Submit failed, App Catalog returned statuscode %v", res.StatusCode)
+		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]

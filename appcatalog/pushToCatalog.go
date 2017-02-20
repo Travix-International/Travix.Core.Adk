@@ -35,7 +35,9 @@ func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose 
 			break
 		}
 
-		log.Printf("An error occured when trying to push the application: %s\n", err.Error())
+		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			break
+		}
 
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
@@ -65,11 +67,6 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 	if res.StatusCode == 401 || res.StatusCode == 403 {
 		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
 		return "", fmt.Errorf("Authentication error")
-	}
-
-	if res.StatusCode == 504 || res.StatusCode == 408 {
-		log.Printf("The AppCatalog request timed out (status code %v)", res.StatusCode)
-		return "", fmt.Errorf("Timeout error")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -104,7 +101,7 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 	if res.StatusCode == http.StatusOK {
 		log.Println("App has been pushed successfully.")
 	} else {
-		return "", fmt.Errorf("Push failed, App Catalog returned status code %v", res.StatusCode)
+		return "", &catalogError{operation: "Push", statusCode: res.StatusCode}
 	}
 
 	return responseObject.Links["upload"], nil
