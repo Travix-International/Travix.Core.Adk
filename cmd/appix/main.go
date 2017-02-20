@@ -68,8 +68,6 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 
-	log.Println("Registering commands")
-
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
 	appix.RegisterPush(app, config, &args, logger)
