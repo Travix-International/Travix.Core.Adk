@@ -36,6 +36,10 @@ func PushToCatalog(pushURI string, timeout int, appManifestFile string, verbose 
 		}
 
 		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			if err.authenticationIssue() {
+				log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", err.statusCode)
+				return "", fmt.Errorf("Authentication error")
+			}
 			break
 		}
 
@@ -64,9 +68,8 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 		logServerResponse(res)
 	}
 
-	if res.StatusCode == 401 || res.StatusCode == 403 {
-		log.Printf("You are not authorized to push the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
-		return "", fmt.Errorf("Authentication error")
+	if res.StatusCode != http.StatusOK {
+		return "", &catalogError{operation: "Push", statusCode: res.StatusCode}
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -98,11 +101,7 @@ func doPush(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (upl
 		log.Printf("\t%v\n", line)
 	}
 
-	if res.StatusCode == http.StatusOK {
-		log.Println("App has been pushed successfully.")
-	} else {
-		return "", &catalogError{operation: "Push", statusCode: res.StatusCode}
-	}
+	log.Println("App has been pushed successfully.")
 
 	return responseObject.Links["upload"], nil
 }

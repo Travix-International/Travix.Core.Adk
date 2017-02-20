@@ -38,6 +38,10 @@ func SubmitToCatalog(submitURI string, timeout int, appManifestFile string, zapF
 		}
 
 		if err, ok := err.(*catalogError); ok && !err.canRetry() {
+			if err.authenticationIssue() {
+				log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", err.statusCode)
+				return "", fmt.Errorf("Authentication error")
+			}
 			break
 		}
 
@@ -66,9 +70,8 @@ func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (a
 		logServerResponse(res)
 	}
 
-	if res.StatusCode == 401 || res.StatusCode == 403 {
-		log.Printf("You are not authorized to submit the application to the App Catalog (status code %v). If you are not signed in, please log in using 'appix login'.", res.StatusCode)
-		return "", fmt.Errorf("Authentication error")
+	if res.StatusCode != http.StatusOK {
+		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -99,10 +102,6 @@ func doSubmit(req *http.Request, maxTimeoutValue time.Duration, verbose bool) (a
 		for key, val := range responseObject.Links {
 			log.Printf("\tLINK: %s\t\t%s", key, val)
 		}
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return "", &catalogError{operation: "Submit", statusCode: res.StatusCode}
 	}
 
 	acceptanceQueryURLPath, _ := responseObject.Links["acc:query"]
