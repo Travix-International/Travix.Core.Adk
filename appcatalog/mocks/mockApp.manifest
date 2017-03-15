@@ -1,0 +1,43 @@
+{
+    "name": "test",
+    "description": "Application initialized with the HelloWorld app template.",
+    "version": "10.1000",
+    "publisher": "Stark Industries",
+    "ui": {
+        "widgets": {
+            "helloWorldWidget": {
+                "targetContainers": [
+                    "checkoutExtrasDemo"
+                ]
+            }
+        },
+        "permissions": {
+            "required": [
+                "shoppingCartContent",
+                "customerData"
+            ],
+            "issued": [
+                "signSellingData"
+            ]
+        },
+        "active": true
+    },
+    "api": {
+        "serviceUrls": {
+        },
+        "environments": {
+            "development": {
+                "serviceUrls": {}
+            }
+        },
+        "permissions": {
+            "required": [
+                "shoppingCartContent",
+                "customerData"
+            ],
+            "issued": [
+                "signSellingData"
+            ]
+        }
+    }
+}

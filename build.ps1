@@ -32,6 +32,9 @@ $APP_LDFLAGS="-s
 Write-Output "Load flags will be $APP_LDFLAGS"
 Write-Output "AV vars are $env:APPVEYOR_BUILD_VERSION / $env:APPVEYOR_REPO_COMMIT"
 
+# run the tests
+go test $(go list ./... | grep -v /vendor/)
+
 $env:GOARCH="amd64"
 $env:GOOS="linux"
 Write-Output "Building Linux binary..."
