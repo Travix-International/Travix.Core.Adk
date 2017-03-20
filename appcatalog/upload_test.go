@@ -4,7 +4,7 @@ import "testing"
 
 func TestCreateMultiFileUploadRequest(t *testing.T) {
 	files := make(map[string]string)
-	files["application"] = "mocks/mock.js"
+	files["application"] = "../mocks/mock.js"
 
 	rawFields := make(map[string]string)
 	rawFields["field"] = "test"

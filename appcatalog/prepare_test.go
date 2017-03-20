@@ -17,11 +17,12 @@ func TestPrepare(t *testing.T) {
 	defer testServer.Close()
 
 	files := make(map[string]string)
-	files["mock.js"] = "mocks/mock.js"
+	files["mock.js"] = "../mocks/mock.js"
 
 	conf := config.Config{
-		AuthFilePath:   "mocks/mockAuth.json",
-		FirebaseApiKey: "firebaseapikey",
+		AuthFilePath:            "../mocks/mockAuth.json",
+		FirebaseApiKey:          "firebaseapikey",
+		FirebaseRefreshTokenUrl: testServer.URL + "/firebase?key=",
 	}
 
 	logger := appixLogger.NewAppixLogger(testServer.URL)
@@ -48,8 +49,9 @@ func TestPrepareFail(t *testing.T) {
 	files["mock.js"] = "mock.js"
 
 	conf := config.Config{
-		AuthFilePath:   "mocks/mockAuth.json",
-		FirebaseApiKey: "firebaseapikey",
+		AuthFilePath:            "../mocks/mockAuth.json",
+		FirebaseApiKey:          "firebaseapikey",
+		FirebaseRefreshTokenUrl: testServer.URL + "/firebase?key=",
 	}
 
 	logger := appixLogger.NewAppixLogger(testServer.URL)
@@ -73,11 +75,12 @@ func TestCanSendWithoutAuthentication(t *testing.T) {
 	defer testServer.Close()
 
 	files := make(map[string]string)
-	files["mock.js"] = "mocks/mock.js"
+	files["mock.js"] = "../mocks/mock.js"
 
 	conf := config.Config{
-		AuthFilePath:   "",
-		FirebaseApiKey: "firebaseapikey",
+		AuthFilePath:            "",
+		FirebaseApiKey:          "firebaseapikey",
+		FirebaseRefreshTokenUrl: testServer.URL + "/firebase?key=",
 	}
 
 	logger := appixLogger.NewAppixLogger(testServer.URL)

@@ -17,7 +17,7 @@ func TestUploadToFrontend(t *testing.T) {
 
 	defer testServer.Close()
 
-	pollURI, err := UploadToFrontend(testServer.URL, "mocks/mock.js", "test", "132-321", false)
+	pollURI, err := UploadToFrontend(testServer.URL, "../mocks/mock.js", "test", "132-321", false)
 
 	if err != nil {
 		t.Fatalf("TestUpladToFrontend failed. Details: %s\n", err.Error())
@@ -39,7 +39,7 @@ func TestUploadToFrontendFail(t *testing.T) {
 
 	defer testServer.Close()
 
-	pollURI, err := UploadToFrontend(testServer.URL, "mocks/mock.js", "test", "132-321", false)
+	pollURI, err := UploadToFrontend(testServer.URL, "../mocks/mock.js", "test", "132-321", false)
 
 	if err != nil {
 		t.Logf("TestUpladToFrontend failed. Details: %s\n", err.Error())

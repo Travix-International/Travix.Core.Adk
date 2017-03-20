@@ -26,6 +26,7 @@ var (
 	travixFirebaseDatabaseUrl       string
 	travixFirebaseStorageBucket     string
 	travixFirebaseMessagingSenderId string
+	travixFirebaseRefreshTokenUrl   string
 	travixDeveloperProfileUrl       string
 	travixLoggerUrl                 string
 )
@@ -104,6 +105,7 @@ func makeConfig() config.Config {
 		FirebaseDatabaseUrl:       travixFirebaseDatabaseUrl,
 		FirebaseStorageBucket:     travixFirebaseStorageBucket,
 		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
+		FirebaseRefreshTokenUrl:   travixFirebaseRefreshTokenUrl,
 		TravixLoggerUrl:           travixLoggerUrl,
 
 		AuthServerPort:   "7001",

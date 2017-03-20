@@ -94,7 +94,7 @@ func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody,
 	}
 
 	// Either we don't have a token yet, or it's expired (or close to expiry), so we get a new token.
-	authToken, err := authData.refreshToken(firebaseAPIKey)
+	authToken, err := authData.refreshToken(firebaseAPIKey, config.FirebaseRefreshTokenUrl)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
@@ -128,20 +128,25 @@ func LoadAuthToken(config config.Config, logger *appixLogger.Logger) (TokenBody,
 }
 
 // refreshToken refreshes the OAuth access token based on the refresh token.
-func (auth *AuthData) refreshToken(firebaseAPIKey string) (TokenBody, error) {
+func (auth *AuthData) refreshToken(firebaseAPIKey string, firebaseTokenRefreshURL string) (TokenBody, error) {
 	refreshToken := auth.User.StsTokenManager.RefreshToken
 
 	tokenClient := &http.Client{}
 	var tokenReqPayload = []byte(`{"grant_type":"refresh_token","refresh_token": "` + refreshToken + `"}`)
-	tokenReq, tokenReqErr := http.NewRequest("POST", "https://securetoken.googleapis.com/v1/token?key="+firebaseAPIKey, bytes.NewBuffer(tokenReqPayload))
+	tokenReq, tokenReqErr := http.NewRequest("POST", firebaseTokenRefreshURL+firebaseAPIKey, bytes.NewBuffer(tokenReqPayload))
 	if tokenReqErr != nil {
 		return TokenBody{}, tokenReqErr
 	}
 
 	tokenReq.Header.Set("Content-Type", "application/json")
 	tokenRes, tokenResErr := tokenClient.Do(tokenReq)
+
 	if tokenResErr != nil {
 		return TokenBody{}, tokenResErr
+	}
+
+	if tokenRes.StatusCode < 200 || tokenRes.StatusCode > 399 {
+		return TokenBody{}, fmt.Errorf("An error occured while requesting the Firebase token. Status code: %d\n", tokenRes.StatusCode)
 	}
 
 	tokenBody := TokenBody{}
