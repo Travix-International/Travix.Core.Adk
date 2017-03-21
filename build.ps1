@@ -27,10 +27,14 @@ $APP_LDFLAGS="-s
 -X main.travixFirebaseDatabaseUrl=$TRAVIX_FIREBASE_DATABASE_URL
 -X main.travixFirebaseStorageBucket=$TRAVIX_FIREBASE_STORAGE_BUCKET
 -X main.travixFirebaseMessagingSenderId=$TRAVIX_FIREBASE_MESSAGING_SENDER_ID
+-X main.travixFirebaseRefreshTokenUrl=$TRAVIX_FIREBASE_REFRESH_TOKEN_URL
 -X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
 -X main.travixLoggerUrl=$TRAVIX_LOGGER_URL"
 Write-Output "Load flags will be $APP_LDFLAGS"
 Write-Output "AV vars are $env:APPVEYOR_BUILD_VERSION / $env:APPVEYOR_REPO_COMMIT"
+
+# run the tests
+go test $(go list ./... | grep -v /vendor/)
 
 $env:GOARCH="amd64"
 $env:GOOS="linux"

@@ -13,14 +13,18 @@ type bundleMessage struct {
 	Output string
 }
 
+type meta struct {
+	Status   string
+	Messages []bundleMessage
+}
+
+type links struct {
+	Preview string
+}
+
 type pushPollResponse struct {
-	Meta struct {
-		Status   string
-		Messages []bundleMessage
-	}
-	Links struct {
-		Preview string
-	}
+	Meta  meta
+	Links links
 }
 
 const (
