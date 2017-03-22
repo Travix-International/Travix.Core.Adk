@@ -23,12 +23,6 @@ APP_LDFLAGS="-s
 # run the tests
 go test $(go list ./... | grep -v /vendor/)
 
-# run the tests
-go test $(go list ./... | grep -v /vendor/)
-
-# run the tests
-go test $(go list ./... | grep -v /vendor/)
-
 echo "Building Windows binary..."
 GOARCH=amd64 GOOS=windows go build -ldflags "$APP_LDFLAGS" -o bin/appix.exe -i ./cmd/appix
 
