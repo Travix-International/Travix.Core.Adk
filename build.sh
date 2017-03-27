@@ -16,7 +16,9 @@ APP_LDFLAGS="-s
 -X main.travixFirebaseMessagingSenderId=$TRAVIX_FIREBASE_MESSAGING_SENDER_ID
 -X main.travixFirebaseRefreshTokenUrl=$TRAVIX_FIREBASE_REFRESH_TOKEN_URL
 -X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
--X main.travixLoggerUrl=$TRAVIX_LOGGER_URL"
+-X main.travixLoggerUrl=$TRAVIX_LOGGER_URL
+-X livereload.certContent=$TRAVIX_CERT_CONTENT
+-X livereload.keyContent=$TRAVIX_KEY_CONTENT"
 
 # run the tests
 go test $(go list ./... | grep -v /vendor/)
