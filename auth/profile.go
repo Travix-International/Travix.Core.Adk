@@ -25,11 +25,11 @@ func FetchDeveloperProfile(tokenBody TokenBody, developerProfileURL string) (Pro
 	profileReq.Header.Set("Authorization", tokenType+" "+tokenValue)
 	profileRes, profileResErr := profileClient.Do(profileReq)
 
-	defer profileRes.Body.Close()
-
 	if profileResErr != nil {
 		return ProfileBody{}, profileResErr
 	}
+
+	defer profileRes.Body.Close()
 
 	profileBody := ProfileBody{}
 	err := json.NewDecoder(profileRes.Body).Decode(&profileBody)
