@@ -15,7 +15,7 @@ package appixLogger
  * example:
  *  if err != nil {
  *   logger.AddMessageToQueue(appixLogger.LoggerNotification{
- *			Type:    "error",
+ *			Type:    logger.LevelError,
  *			Message: fmt.Sprintf("Error here is the message: %s", err.Error()),
  *			Action:  "myAction",
  *   })
@@ -28,6 +28,13 @@ import (
 	loggy "github.com/Travix-International/logger"
 )
 
+const (
+	// LevelError is the error level
+	LevelError = "error"
+	// LevelInfo is the info level
+	LevelInfo = "info"
+)
+
 // LoggerNotification : The structure describing a notification to log
 type LoggerNotification struct {
 	Message  string
@@ -35,11 +42,16 @@ type LoggerNotification struct {
 	Level    string
 }
 
+// AppixLogger defines the core set of logging calls, to be used by other components
+type AppixLogger interface {
+	AddMessageToQueue(notification LoggerNotification)
+}
+
 // Logger : The structure of the logger singleton
 type Logger struct {
-	Loggy                   *loggy.Logger
-	LoggerNotificationQueue chan LoggerNotification
-	Quit                    chan bool
+	loggerImpl              *loggy.Logger
+	loggerNotificationQueue chan LoggerNotification
+	quit                    chan bool
 	loggerURL               string
 }
 
@@ -68,9 +80,9 @@ func (l *Logger) log(n LoggerNotification) {
 	var err error
 
 	if n.Level == "error" {
-		err = l.Loggy.ErrorWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
+		err = l.loggerImpl.ErrorWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
 	} else {
-		err = l.Loggy.InfoWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
+		err = l.loggerImpl.InfoWithMeta(n.LogEvent, n.Message, getDefaultMeta(n.LogEvent, ""))
 	}
 
 	if err != nil {
@@ -83,8 +95,8 @@ func (l *Logger) AddMessageToQueue(notification LoggerNotification) {
 	// log on stdout to kkep the user aware of what's going on
 	log.Printf("%s: %s\n", notification.LogEvent, notification.Message)
 
-	if l.Loggy != nil {
-		l.LoggerNotificationQueue <- notification
+	if l.loggerImpl != nil {
+		l.loggerNotificationQueue <- notification
 	}
 }
 
@@ -93,9 +105,9 @@ func (l *Logger) Start() {
 	go func() {
 		for {
 			select {
-			case notification := <-l.LoggerNotificationQueue:
+			case notification := <-l.loggerNotificationQueue:
 				l.log(notification)
-			case <-l.Quit:
+			case <-l.quit:
 				return
 			}
 		}
@@ -104,7 +116,7 @@ func (l *Logger) Start() {
 
 // Stop : kill the logger routine
 func (l *Logger) Stop() {
-	l.Quit <- true
+	l.quit <- true
 }
 
 // NewAppixLogger : create a new instance of Logger if doesn't exist already. Otherwise return the actual instance
@@ -117,8 +129,11 @@ func NewAppixLogger(url string) *Logger {
 	}
 
 	return &Logger{
-		LoggerNotificationQueue: make(chan LoggerNotification),
-		Quit:  make(chan bool),
-		Loggy: myLogger,
+		// CR JP: Note how we use an unbuffered channel for the notification queue. This has its advantages
+		// (easy) at the expense of concurrent processes possibly having to halt due to this. Also, any
+		// routine that logs before Start() or after Stop() will deadlock.
+		loggerNotificationQueue: make(chan LoggerNotification),
+		quit:       make(chan bool),
+		loggerImpl: myLogger,
 	}
 }
