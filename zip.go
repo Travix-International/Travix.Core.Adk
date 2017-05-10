@@ -73,25 +73,33 @@ func zipFolder(source, target string, includePathInZipFn filePickerFunc) error {
 	})
 }
 
-func extractZip(src, dest string) error {
+func extractZip(src, dest, srcSubDirectory string) (fileCount int, err error) {
 	reader, err := archiveZip.OpenReader(src)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	defer reader.Close()
 
+	// The files are stored 'sequentially' where the Name in the FileHeader of the file
+	// contains the full path. We are looking to extract a specific subdirectory in the zip to
+	// our target directory
 	for _, f := range reader.Reader.File {
+		isWithinSubDirectory := len(f.Name) > len(srcSubDirectory) && strings.Compare(strings.ToLower(f.Name[0:len(srcSubDirectory)]), strings.ToLower(srcSubDirectory)) == 0
+		if !isWithinSubDirectory {
+			continue
+		}
 
 		zipped, err := f.Open()
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		defer zipped.Close()
 
-		path := filepath.Join(dest, f.Name)
+		nameWithoutSubDirectory := f.Name[len(srcSubDirectory):]
+		path := filepath.Join(dest, nameWithoutSubDirectory)
 
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(path, 0777)
@@ -102,16 +110,17 @@ func extractZip(src, dest string) error {
 			writer, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, f.Mode())
 
 			if err != nil {
-				return err
+				return 0, err
 			}
 
 			defer writer.Close()
 
 			if _, err = io.Copy(writer, zipped); err != nil {
-				return err
+				return 0, err
 			}
 		}
+		fileCount++
 	}
 
-	return nil
+	return fileCount, nil
 }
