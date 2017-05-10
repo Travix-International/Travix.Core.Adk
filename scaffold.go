@@ -39,7 +39,7 @@ func scaffoldNewApp(appPath string, verbose bool) error {
 }
 
 func applyTemplate(appPath string) error {
-	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/HelloWorldTemplate.zip"
+	helloWorldTemplateURL := "https://github.com/Travix-International/travix-fireball-app-templates/archive/master.zip"
 
 	tempFolder, err := ioutil.TempDir("", "appix")
 	if err != nil {
