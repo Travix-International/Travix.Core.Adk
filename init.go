@@ -14,8 +14,9 @@ import (
 // RegisterInit registers the 'init' command.
 func RegisterInit(app *kingpin.Application, config config.Config, args *GlobalArgs) {
 	var appPath string
+	var templateName string
 
-	command := app.Command("init", "Scaffold a new application into the specified folder").
+	command := app.Command("init", "Scaffold a new application into the specified folder, using the specified template.").
 		Action(func(parseContext *kingpin.ParseContext) error {
 			// grab the absolute path
 			appPathRelative := appPath
@@ -41,7 +42,7 @@ func RegisterInit(app *kingpin.Application, config config.Config, args *GlobalAr
 			}
 
 			// Scaffold
-			err = scaffoldNewApp(appPathAbsolute, args.Verbose)
+			err = scaffoldNewApp(appPathAbsolute, templateName, args.Verbose)
 			if err != nil {
 				return err
 			}
@@ -54,6 +55,10 @@ func RegisterInit(app *kingpin.Application, config config.Config, args *GlobalAr
 	command.Arg("appPath", "Path to an empty folder. (default: current folder)").
 		Default(".").
 		ExistingDirVar(&appPath)
+
+	command.Arg("template", "Name of the template to use. (default: 'default')").
+		Default("default").
+		StringVar(&templateName)
 }
 
 func isEmptyPath(appPath string) (bool, error) {

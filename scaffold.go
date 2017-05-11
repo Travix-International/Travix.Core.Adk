@@ -2,6 +2,8 @@ package appix
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -10,10 +12,10 @@ import (
 	"path/filepath"
 )
 
-func scaffoldNewApp(appPath string, verbose bool) error {
+func scaffoldNewApp(appPath, templateName string, verbose bool) error {
 	// Apply the template
 	log.Print("Scaffolding the application files...")
-	err := applyTemplate(appPath)
+	err := applyTemplate(appPath, templateName)
 	if err != nil {
 		log.Printf("Failed to apply template")
 		return err
@@ -38,8 +40,10 @@ func scaffoldNewApp(appPath string, verbose bool) error {
 	return nil
 }
 
-func applyTemplate(appPath string) error {
-	helloWorldTemplateURL := "https://raw.githubusercontent.com/Travix-International/travix-fireball-app-templates/master/HelloWorldTemplate.zip"
+func applyTemplate(appPath, templateName string) error {
+	helloWorldTemplateURL := "https://github.com/Travix-International/travix-appix-templates/archive/master.zip"
+	zipSubDirectory := "travix-appix-templates-master"
+	zipSubDirectory = fmt.Sprintf("%s/%s/", zipSubDirectory, templateName)
 
 	tempFolder, err := ioutil.TempDir("", "appix")
 	if err != nil {
@@ -54,7 +58,7 @@ func applyTemplate(appPath string) error {
 
 	defer out.Close()
 
-	log.Println("Downloading template from " + helloWorldTemplateURL)
+	log.Printf("Downloading template '%s' from %s\n", templateName, helloWorldTemplateURL)
 
 	// Download the template.
 	resp, err := http.Get(helloWorldTemplateURL)
@@ -70,9 +74,16 @@ func applyTemplate(appPath string) error {
 	}
 
 	// Unzip the template and do some basic replacements.
-	err = extractZip(tempFile, appPath)
+	var fileCount int
+	fileCount, err = extractZip(tempFile, appPath, zipSubDirectory)
 	if err != nil {
 		return err
+	}
+
+	if fileCount <= 0 {
+		errorText := fmt.Sprintf("Template '%s' does not exist", templateName)
+		log.Print(errorText)
+		return errors.New(errorText)
 	}
 
 	appName := filepath.Base(appPath)
