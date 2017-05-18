@@ -78,6 +78,17 @@ export TRAVIX_LOGGER_URL=""
 export TRAVIX_DEVELOPER_PROFILE_URL=""
 ```
 
+### Using a custom dev server
+
+If we want to override the dev server to which `appix` is pushing an application under development, we have to add the `"DevServerOverride"` property to the `.appixDevSettings` file in the root folder of our application.
+
+```
+{
+  ...
+  "DevServerOverride": "https://my-dev-server.example.com"
+}
+```
+
 ### Build
 
 Running this would generate `./bin/appix-mac` (if you are on macOS):

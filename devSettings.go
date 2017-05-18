@@ -17,7 +17,8 @@ import (
 */
 
 type DevelopmentSettings struct {
-	SessionID string // This would be the session ID that the user will use the push/preview his changes
+	SessionID         string // This would be the session ID that the user will use the push/preview his changes.
+	DevServerOverride string // When pushing an app, the default dev server returned by the app catalog can be overwritten with this.
 }
 
 func readDevelopmentSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {

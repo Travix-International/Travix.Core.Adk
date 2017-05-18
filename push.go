@@ -76,7 +76,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 		return err
 	}
 
-	sessionID, err := getSessionID(appPath, args.Verbose)
+	devSettings, err := getDevSettings(appPath, args.Verbose)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
@@ -90,7 +90,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
 	rootURI := config.CatalogURIs[args.TargetEnv]
-	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, sessionID)
+	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
 
 	uploadURI, err := appcatalog.PushToCatalog(pushURI, timeout, appManifestFile, args.Verbose, config, logger)
 
@@ -104,21 +104,23 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	}
 
 	if localFrontend {
-		log.Println("Ignoring URL and substituting local front-end URL instead.")
-		reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
+		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, "http://localhost:3001")
+	} else if devSettings.DevServerOverride != "" {
+		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, devSettings.DevServerOverride)
+	}
 
-		uploadURI = reg.ReplaceAllString(uploadURI, "http://localhost:3001$2")
+	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Error during trying to overriding the Dev server URL: %s", err.Error()),
+			LogEvent: "AppixPush",
+		})
+		return err
 	}
 
 	log.Println("Frontend upload url:", uploadURI)
 
-	pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, sessionID, args.Verbose)
-
-	log.Println("Frontend upload poll uri:", pollURI)
+	pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, devSettings.SessionID, args.Verbose)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
@@ -128,6 +130,8 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 		})
 		return err
 	}
+
+	log.Println("Frontend upload poll uri:", pollURI)
 
 	appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
 
@@ -142,8 +146,20 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	return nil
 }
 
+// replaceURLSchemaAndDomain replaces the schema and domain part in the uri, with this we can override which dev server we are pushing to.
+func replaceURLSchemaAndDomain(uri string, replace string) (string, error) {
+	log.Printf("Ignoring URL and substituting it with %s.", replace)
+	reg, err := regexp.Compile(`(https?:\/\/.*)(\/.*)`)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return reg.ReplaceAllString(uri, replace+"$2"), nil
+}
+
 // getSessionID gets the current session id. If there is an existing one in the folder, it uses that, otherwise it creates a new one.
-func getSessionID(appPath string, verbose bool) (string, error) {
+func getDevSettings(appPath string, verbose bool) (*DevelopmentSettings, error) {
 	s, err := readDevelopmentSettings(appPath, verbose)
 
 	if err != nil {
@@ -151,16 +167,16 @@ func getSessionID(appPath string, verbose bool) (string, error) {
 
 		if err != nil {
 			log.Println("Couldn't create new development settings.")
-			return "", err
+			return nil, err
 		}
 
 		err = writeDevelopmentSettings(appPath, s, verbose)
 
 		if err != nil {
 			log.Println("Could not save new development settings file.")
-			return "", err
+			return nil, err
 		}
 	}
 
-	return s.SessionID, nil
+	return s, nil
 }
