@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // UploadToFrontend uploads the app package to the frontend for bundling.
@@ -45,6 +46,10 @@ func UploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 		logServerResponse(response)
 	}
 
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Uploading failed, the frontend returned status code %v", response.StatusCode)
+	}
+
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Println("Error reading response from the frontend.")
@@ -61,19 +66,19 @@ func UploadToFrontend(uploadURI string, zapFile string, appName string, sessionI
 		return "", err
 	}
 
-	log.Printf("Express frontend returned status code %v.", response.StatusCode)
-
-	if response.StatusCode == http.StatusOK {
-		log.Println("The app has been uploaded to the frontend successfully.")
-	} else {
-		return "", fmt.Errorf("Uploading failed, the frontend returned status code %v", response.StatusCode)
-	}
-
 	// The frontend returns a link which can be used to poll the upload status.
 	// {
 	//   "links": {
 	//     "progress": "https://fireball-dev.travix.com/upload/progress?sessionId=123`"
 	//   }
 	// }
-	return responseObject["links"]["progress"], nil
+
+	progressUri := responseObject["links"]["progress"]
+	if len(strings.TrimSpace(progressUri)) == 0 {
+		return "", fmt.Errorf("Uploading failed, the app catalog did not return a valid response")
+	}
+
+	log.Println("The app has been uploaded to the frontend successfully.")
+
+	return progressUri, nil
 }
