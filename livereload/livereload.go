@@ -21,7 +21,7 @@ var (
 )
 
 func base64Decode(src string) []byte {
-	val, err := base64.StdEncoding.DecodeString(certContent)
+	val, err := base64.StdEncoding.DecodeString(src)
 
 	if err != nil {
 		log.Fatalf("An error occured while decoding the value. Details: %s\n", err.Error())

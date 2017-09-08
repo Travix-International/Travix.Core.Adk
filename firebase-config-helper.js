@@ -6,11 +6,15 @@ var config = {
     databaseURL: "https://fireball-development.firebaseio.com",
     projectId: "fireball-development",
     storageBucket: "fireball-development.appspot.com",
-    messagingSenderId: "445151709427"
+    messagingSenderId: "445151709427",
+    certContent: "DummyCertificateContent",
+    keyContent: "DummyKeyContent"
   };
 
 console.log(
 `For PowerShell:
+$env:TRAVIX_CERT_CONTENT='${config.certContent}'
+$env:TRAVIX_KEY_CONTENT='${config.keyContent}'
 $env:TRAVIX_FIREBASE_API_KEY='${config.apiKey}'
 $env:TRAVIX_FIREBASE_DATABASE_URL='${config.databaseURL}'
 $env:TRAVIX_FIREBASE_STORAGE_BUCKET='${config.storageBucket}'
@@ -21,6 +25,8 @@ $env:TRAVIX_DEVELOPER_PROFILE_URL='https://developerprofile.${config.projectId.e
 $env:TRAVIX_LOGGER_URL='https://frogger.travix.com/'
 
 For bash:
+TRAVIX_CERT_CONTENT='${config.certContent}'
+TRAVIX_KEY_CONTENT='${config.keyContent}'
 TRAVIX_FIREBASE_API_KEY='${config.apiKey}'
 TRAVIX_FIREBASE_DATABASE_URL='${config.databaseURL}'
 TRAVIX_FIREBASE_STORAGE_BUCKET='${config.storageBucket}'
