@@ -3,8 +3,13 @@ package appix
 import (
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"time"
+
+	"cloud.google.com/go/storage"
+	"golang.org/x/net/context"
+	"google.golang.org/api/option"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
@@ -88,6 +93,38 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	}
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
+
+	// push to GCP Storage Bucket
+	tempPath := config.DirectoryPath + "/tmp"
+	// create a temporary directory
+	err = os.Mkdir(tmpPath, (os.ModeDir | 0600))
+	
+	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not create the temporary directory on client OS: %s", err.Error()),
+			LogEvent: "AppixPush",
+		})
+		return err
+	}
+
+	authFile := tmpPath + "/key.json"
+	err = ioutil.WriteFile(authFile, []byte("I am a temporary key"), 0600)
+
+	if err != nil {
+		logger.AddMessageToQueue(appixLogger.LoggerNotification{
+			Level:    "error",
+			Message:  fmt.Sprintf("Could not create the temporary key file on client OS: %s", err.Error()),
+			LogEvent: "AppixPush",
+		})
+		return err
+	}
+
+	// initialize gcloud api
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx, []option.ClientOption{
+		options.WithCredentialsFile(authFile)
+	})
 
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
