@@ -2,6 +2,8 @@ package appix
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -9,7 +11,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/net/context"
-	"google.golang.org/api/option"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
@@ -94,11 +95,18 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	// push to GCP Storage Bucket
 	tempPath := config.DirectoryPath + "/tmp"
+	// check if temp folder exists and if that is the case then removes it
+	if _, err := os.Stat(tempPath); err == nil {
+		errr := os.RemoveAll(tempPath)
+		if errr != nil {
+			return errr
+		}
+	}
+
 	// create a temporary directory
-	err = os.Mkdir(tmpPath, (os.ModeDir | 0600))
-	
+	err = os.Mkdir(tempPath, (os.ModeDir | 0700))
+
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
@@ -108,7 +116,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 		return err
 	}
 
-	authFile := tmpPath + "/key.json"
+	authFile := tempPath + "/key.json"
 	err = ioutil.WriteFile(authFile, []byte("I am a temporary key"), 0600)
 
 	if err != nil {
@@ -120,11 +128,67 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 		return err
 	}
 
-	// initialize gcloud api
+	// Initialize gcloud api
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx, []option.ClientOption{
-		options.WithCredentialsFile(authFile)
-	})
+	// Creates a client.
+	/*
+		client, err := storage.NewClient(ctx, []option.ClientOption{
+			options.WithCredentialsFile(authFile)
+		})
+	*/
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+
+	// Sets your Google Cloud Platform project ID.
+	projectID := "Travix-Development"
+	// Sets the name for the new bucket.
+	bucketName := "appix-getting-started"
+	// Creates a Bucket instance.
+	bucket := client.Bucket(bucketName)
+	// Check if bucket exists.
+	attrs, err := bucket.Attrs(ctx)
+	if err != nil {
+		// Bucket does not exists yet, creates a new bucket
+		if errr := bucket.Create(ctx, projectID, nil); errr != nil {
+			log.Println("Failed to create bucket: ", errr)
+		}
+	} else {
+		log.Println("Bucket Exists: ", attrs.Name, attrs.Created)
+	}
+	// push to GCP Storage Bucket
+	// Write a new file in the bucket
+	/*
+		fileName := "file.txt"
+		wc := bucket.Object(fileName).NewWriter(ctx)
+		wc.ContentType = "text/plain"
+
+		if _, err := wc.Write([]byte("abcde\n")); err != nil {
+			log.Println(ctx, "createFile: unable to write data to bucket %q, file %q: %v", bucket, fileName, err)
+			// log.Errorf(ctx, "createFile: unable to write data to bucket %q, file %q: %v", bucket, fileName, err)
+			return err
+		}
+		if err := wc.Close(); err != nil {
+			log.Println(ctx, "createFile: unable to close bucket %q, file %q: %v", bucket, fileName, err)
+			// log.Errorf(ctx, "createFile: unable to close bucket %q, file %q: %v", bucket, fileName, err)
+			return err
+		}
+	*/
+	// Copy the existing file
+	f, err := os.Open(zapFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	wc := client.Bucket(bucketName).Object("zapFile.zip").NewWriter(ctx)
+	if _, err = io.Copy(wc, f); err != nil {
+		return err
+	}
+	if err := wc.Close(); err != nil {
+		return err
+	}
 
 	rootURI := config.CatalogURIs[args.TargetEnv]
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
