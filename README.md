@@ -59,7 +59,7 @@ $ git clone git@github.com:Travix-International/appix.git $GOPATH/src/github.com
 Install the dependencies with [gvt](https://github.com/FiloSottile/gvt):
 
 ```
-$ cd $GOPATH/src/Travix-International/appix
+$ cd $GOPATH/src/github.com/Travix-International/appix
 $ gvt restore
 ```
 
