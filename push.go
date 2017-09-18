@@ -102,7 +102,20 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	}
 
 	// request the upload url
+	// uploadObject, err := RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
+
+	retrieveURLTries := 3
 	uploadObject, err := RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
+	if err != nil {
+		log.Printf("Problem retrieving upload URL, will retry retrieval again", err)
+		for i := 1; i <= retrieveURLTries; i++ {
+			uploadObject, err = RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
+			if err == nil {
+				break
+			}
+			time.Sleep(time.Duration(3) * time.Second)
+		}
+	}
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
