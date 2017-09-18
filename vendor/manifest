@@ -92,15 +92,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "cloud.google.com/go/storage",
-			"repository": "https://code.googlesource.com/gocloud",
-			"vcs": "git",
-			"revision": "dcc44a0fa974a198c6448505ea03b138f90f71f7",
-			"branch": "master",
-			"path": "/storage",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/Travix-International/logger",
 			"repository": "https://github.com/Travix-International/logger",
 			"vcs": "git",

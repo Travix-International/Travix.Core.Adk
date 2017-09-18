@@ -2,20 +2,14 @@ package appix
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 	"time"
 
-	"cloud.google.com/go/storage"
-	"golang.org/x/net/context"
-
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/Travix-International/appix/appcatalog"
 	"github.com/Travix-International/appix/appixLogger"
+	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -64,7 +58,7 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 }
 
 func push(config config.Config, appPath string, noBrowser bool, wait int, timeout int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
-	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
+	appPath, appName, _, err := prepareAppUpload(appPath)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
@@ -95,146 +89,76 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	tempPath := config.DirectoryPath + "/tmp"
-	// check if temp folder exists and if that is the case then removes it
-	if _, err := os.Stat(tempPath); err == nil {
-		errr := os.RemoveAll(tempPath)
-		if errr != nil {
-			return errr
-		}
-	}
-
-	// create a temporary directory
-	err = os.Mkdir(tempPath, (os.ModeDir | 0700))
+	// load auth token
+	tb, err := auth.LoadAuthToken(config, logger)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Could not create the temporary directory on client OS: %s", err.Error()),
+			Message:  fmt.Sprintf("You are not logged in.\nYou can sign in by using 'appix login'. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	authFile := tempPath + "/key.json"
-	err = ioutil.WriteFile(authFile, []byte("I am a temporary key"), 0600)
+	// request the upload url
+	uploadObject, err := RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Could not create the temporary key file on client OS: %s", err.Error()),
+			Message:  fmt.Sprintf("Unable to retrieve an upload URL for your app. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	// Initialize gcloud api
-	ctx := context.Background()
-	// Creates a client.
-	/*
-		client, err := storage.NewClient(ctx, []option.ClientOption{
-			options.WithCredentialsFile(authFile)
-		})
-	*/
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
-	// Sets your Google Cloud Platform project ID.
-	projectID := "Travix-Development"
-	// Sets the name for the new bucket.
-	bucketName := "appix-getting-started"
-	// Creates a Bucket instance.
-	bucket := client.Bucket(bucketName)
-	// Check if bucket exists.
-	attrs, err := bucket.Attrs(ctx)
-	if err != nil {
-		// Bucket does not exists yet, creates a new bucket
-		if errr := bucket.Create(ctx, projectID, nil); errr != nil {
-			log.Println("Failed to create bucket: ", errr)
-		}
-	} else {
-		log.Println("Bucket Exists: ", attrs.Name, attrs.Created)
-	}
-	// push to GCP Storage Bucket
-	// Write a new file in the bucket
-	/*
-		fileName := "file.txt"
-		wc := bucket.Object(fileName).NewWriter(ctx)
-		wc.ContentType = "text/plain"
-
-		if _, err := wc.Write([]byte("abcde\n")); err != nil {
-			log.Println(ctx, "createFile: unable to write data to bucket %q, file %q: %v", bucket, fileName, err)
-			// log.Errorf(ctx, "createFile: unable to write data to bucket %q, file %q: %v", bucket, fileName, err)
-			return err
-		}
-		if err := wc.Close(); err != nil {
-			log.Println(ctx, "createFile: unable to close bucket %q, file %q: %v", bucket, fileName, err)
-			// log.Errorf(ctx, "createFile: unable to close bucket %q, file %q: %v", bucket, fileName, err)
-			return err
-		}
-	*/
-	// Copy the existing file
-	f, err := os.Open(zapFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	wc := client.Bucket(bucketName).Object("zapFile.zip").NewWriter(ctx)
-	if _, err = io.Copy(wc, f); err != nil {
-		return err
-	}
-	if err := wc.Close(); err != nil {
-		return err
-	}
-
-	rootURI := config.CatalogURIs[args.TargetEnv]
-	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
-
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, timeout, appManifestFile, args.Verbose, config, logger)
-
-	if err != nil {
+	if err = uploadObject.UploadResource(zapFile); err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Error during pushing the manifest to the App Catalog: %s", err.Error()),
+			Message:  fmt.Sprintf("Unable to upload your app. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	if localFrontend {
-		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, "http://localhost:3001")
-	} else if devSettings.DevServerOverride != "" {
-		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, devSettings.DevServerOverride)
-	}
+	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+		Level:    "log",
+		Message:  fmt.Sprintf("The widget was succesfully uploaded"),
+		LogEvent: "AppixPush",
+	})
 
-	if err != nil {
-		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Level:    "error",
-			Message:  fmt.Sprintf("Error during trying to overriding the Dev server URL: %s", err.Error()),
-			LogEvent: "AppixPush",
-		})
-		return err
-	}
+	// if localFrontend {
+	// 	uploadURI, err = replaceURLSchemaAndDomain(uploadURI, "http://localhost:3001")
+	// } else if devSettings.DevServerOverride != "" {
+	// 	uploadURI, err = replaceURLSchemaAndDomain(uploadURI, devSettings.DevServerOverride)
+	// }
 
-	log.Println("Frontend upload url:", uploadURI)
+	// if err != nil {
+	// 	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+	// 		Level:    "error",
+	// 		Message:  fmt.Sprintf("Error during trying to overriding the Dev server URL: %s", err.Error()),
+	// 		LogEvent: "AppixPush",
+	// 	})
+	// 	return err
+	// }
 
-	pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, devSettings.SessionID, args.Verbose)
+	// log.Println("Frontend upload url:", uploadURI)
 
-	if err != nil {
-		logger.AddMessageToQueue(appixLogger.LoggerNotification{
-			Level:    "error",
-			Message:  fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
-			LogEvent: "AppixPush",
-		})
-		return err
-	}
+	// pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, devSettings.SessionID, args.Verbose)
 
-	log.Println("Frontend upload poll uri:", pollURI)
+	// if err != nil {
+	// 	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+	// 		Level:    "error",
+	// 		Message:  fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
+	// 		LogEvent: "AppixPush",
+	// 	})
+	// 	return err
+	// }
 
-	appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
+	// log.Println("Frontend upload poll uri:", pollURI)
+
+	// appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
 
 	if args.Verbose {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{

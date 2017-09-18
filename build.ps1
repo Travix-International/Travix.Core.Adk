@@ -30,8 +30,9 @@ $APP_LDFLAGS="-s
 -X main.travixFirebaseRefreshTokenUrl=$TRAVIX_FIREBASE_REFRESH_TOKEN_URL
 -X main.travixDeveloperProfileUrl=$TRAVIX_DEVELOPER_PROFILE_URL
 -X main.travixLoggerUrl=$TRAVIX_LOGGER_URL
--X livereload.certContent=$TRAVIX_CERT_CONTENT
--X livereload.keyContent=$TRAVIX_KEY_CONTENT"
+-X main.uploadUrl=$TRAVIX_UPLOAD_URL
+-X github.com/Travix-International/appix/livereload.certContent=$TRAVIX_CERT_CONTENT
+-X github.com/Travix-International/appix/livereload.keyContent=$TRAVIX_KEY_CONTENT"
 
 Write-Output "Load flags will be $APP_LDFLAGS"
 Write-Output "AV vars are $env:APPVEYOR_BUILD_VERSION / $env:APPVEYOR_REPO_COMMIT"
