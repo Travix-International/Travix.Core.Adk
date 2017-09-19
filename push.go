@@ -3,6 +3,7 @@ package appix
 import (
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"time"
 
@@ -102,18 +103,15 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	}
 
 	// request the upload url
-	// uploadObject, err := RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
-
-	retrieveURLTries := 3
-	uploadObject, err := RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
-	if err != nil {
-		log.Printf("Problem retrieving upload URL, will retry retrieval again", err)
-		for i := 1; i <= retrieveURLTries; i++ {
-			uploadObject, err = RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
-			if err == nil {
-				break
-			}
-			time.Sleep(time.Duration(3) * time.Second)
+	var uploadObject *SignedUploadURL
+	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
+		uploadObject, err = RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
+		if err == nil {
+			break
+		}
+		if attempt < config.MaxRetryAttempts {
+			wait := math.Pow(2, float64(attempt-1)) * 1000
+			time.Sleep(time.Duration(wait) * time.Millisecond)
 		}
 	}
 
