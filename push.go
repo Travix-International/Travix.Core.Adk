@@ -105,7 +105,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 	// request the upload url
 	var uploadObject *SignedUploadURL
 	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
-		uploadObject, err = RetrieveUploadURL(config.TravixUploadURL, tb.IdToken, appName, devSettings.SessionID)
+		uploadObject, err = RetrieveUploadURL(config.TravixUploadUrl, tb.IdToken, appName, devSettings.SessionID)
 		if err == nil {
 			break
 		}
