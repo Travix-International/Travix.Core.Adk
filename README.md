@@ -78,6 +78,7 @@ export TRAVIX_FIREBASE_REFRESH_TOKEN_URL=""
 export TRAVIX_CERT_CONTENT=""
 export TRAVIX_KEY_CONTENT=""
 export TRAVIX_DEVELOPER_PROFILE_URL=""
+export TRAVIX_UPLOAD_URL=""
 ```
 
 ### Using a custom dev server

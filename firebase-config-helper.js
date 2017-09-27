@@ -8,7 +8,8 @@ var config = {
     storageBucket: "fireball-development.appspot.com",
     messagingSenderId: "445151709427",
     certContent: "DummyCertificateContent",
-    keyContent: "DummyKeyContent"
+    keyContent: "DummyKeyContent",
+    uploadUrl: "TRAVIX_UPLOAD_URL=https://us-central1-travix-development.cloudfunctions.net/http"
   };
 
 console.log(
@@ -23,6 +24,7 @@ $env:TRAVIX_FIREBASE_AUTH_DOMAIN='${config.authDomain}'
 $env:TRAVIX_FIREBASE_REFRESH_TOKEN_URL='https://securetoken.googleapis.com/v1/token?key='
 $env:TRAVIX_DEVELOPER_PROFILE_URL='https://developerprofile.${config.projectId.endsWith("development") ? "development." : config.projectId.endsWith("staging") ? "staging." : ""}travix.com/'
 $env:TRAVIX_LOGGER_URL='https://frogger.travix.com/'
+$env:TRAVIX_UPLOAD_URL='${config.uploadUrl}'
 
 For bash:
 TRAVIX_CERT_CONTENT='${config.certContent}'
@@ -34,4 +36,5 @@ TRAVIX_FIREBASE_MESSAGING_SENDER_ID='${config.messagingSenderId}'
 TRAVIX_FIREBASE_AUTH_DOMAIN='${config.authDomain}'
 TRAVIX_FIREBASE_REFRESH_TOKEN_URL='https://securetoken.googleapis.com/v1/token?key='
 TRAVIX_DEVELOPER_PROFILE_URL='https://developerprofile.${config.projectId.endsWith("development") ? "development." : config.projectId.endsWith("staging") ? "staging." : ""}travix.com/'
-TRAVIX_LOGGER_URL='https://frogger.travix.com/'`);
+TRAVIX_LOGGER_URL='https://frogger.travix.com/'
+TRAVIX_UPLOAD_URL='${config.uploadUrl}'`);

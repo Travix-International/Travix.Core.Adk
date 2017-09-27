@@ -29,7 +29,7 @@ var (
 	travixFirebaseRefreshTokenUrl   string
 	travixDeveloperProfileUrl       string
 	travixLoggerUrl                 string
-	travixUploadURL                 string
+	travixUploadUrl                 string
 )
 
 // Although these are configuration values, they're not exposed to the public and are therefore kept internally.
@@ -108,7 +108,7 @@ func makeConfig() config.Config {
 		FirebaseMessagingSenderId: travixFirebaseMessagingSenderId,
 		FirebaseRefreshTokenUrl:   travixFirebaseRefreshTokenUrl,
 		TravixLoggerUrl:           travixLoggerUrl,
-		TravixUploadURL:           travixUploadURL,
+		TravixUploadUrl:           travixUploadUrl,
 
 		AuthServerPort:   "7001",
 		MaxRetryAttempts: maxRetryAttempts,
