@@ -9,7 +9,7 @@ var config = {
     messagingSenderId: "445151709427",
     certContent: "DummyCertificateContent",
     keyContent: "DummyKeyContent",
-    uploadUrl: "TRAVIX_UPLOAD_URL=https://us-central1-travix-development.cloudfunctions.net/http"
+    uploadUrl: "https://us-central1-travix-development.cloudfunctions.net/http"
   };
 
 console.log(
