@@ -109,6 +109,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 		if err == nil {
 			break
 		}
+		log.Printf("An error ocurred while retrieving an upload URL for your app. Retry attempt %d of %d \n", attempt, config.MaxRetryAttempts)
 		if attempt < config.MaxRetryAttempts {
 			wait := math.Pow(2, float64(attempt-1)) * 1000
 			time.Sleep(time.Duration(wait) * time.Millisecond)
