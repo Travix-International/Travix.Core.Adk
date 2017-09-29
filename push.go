@@ -3,13 +3,14 @@ package appix
 import (
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/Travix-International/appix/appcatalog"
 	"github.com/Travix-International/appix/appixLogger"
+	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
 )
 
@@ -58,7 +59,7 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 }
 
 func push(config config.Config, appPath string, noBrowser bool, wait int, timeout int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
-	appPath, appName, appManifestFile, err := prepareAppUpload(appPath)
+	appPath, appName, _, err := prepareAppUpload(appPath)
 
 	if err != nil {
 		log.Println("Could not prepare the app folder for uploading")
@@ -89,51 +90,87 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	rootURI := config.CatalogURIs[args.TargetEnv]
-	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
-
-	uploadURI, err := appcatalog.PushToCatalog(pushURI, timeout, appManifestFile, args.Verbose, config, logger)
+	// load auth token
+	tb, err := auth.LoadAuthToken(config, logger)
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Error during pushing the manifest to the App Catalog: %s", err.Error()),
+			Message:  fmt.Sprintf("You are not logged in.\nYou can sign in by using 'appix login'. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	if localFrontend {
-		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, "http://localhost:3001")
-	} else if devSettings.DevServerOverride != "" {
-		uploadURI, err = replaceURLSchemaAndDomain(uploadURI, devSettings.DevServerOverride)
+	// request the upload url
+	var uploadObject *SignedUploadURL
+	for attempt := 1; attempt <= config.MaxRetryAttempts; attempt++ {
+		uploadObject, err = RetrieveUploadURL(config.TravixUploadUrl, tb.IdToken, appName, devSettings.SessionID)
+		if err == nil {
+			break
+		}
+		log.Printf("An error ocurred while retrieving an upload URL for your app. Retry attempt %d of %d \n", attempt, config.MaxRetryAttempts)
+		if attempt < config.MaxRetryAttempts {
+			wait := math.Pow(2, float64(attempt-1)) * 1000
+			time.Sleep(time.Duration(wait) * time.Millisecond)
+		}
 	}
 
 	if err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Error during trying to overriding the Dev server URL: %s", err.Error()),
+			Message:  fmt.Sprintf("Unable to retrieve an upload URL for your app. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	log.Println("Frontend upload url:", uploadURI)
-
-	pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, devSettings.SessionID, args.Verbose)
-
-	if err != nil {
+	if err = uploadObject.UploadResource(zapFile); err != nil {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
 			Level:    "error",
-			Message:  fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
+			Message:  fmt.Sprintf("Unable to upload your app. Error message: %s", err.Error()),
 			LogEvent: "AppixPush",
 		})
 		return err
 	}
 
-	log.Println("Frontend upload poll uri:", pollURI)
+	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+		Level:    "log",
+		Message:  fmt.Sprintf("The widget was succesfully uploaded"),
+		LogEvent: "AppixPush",
+	})
 
-	appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
+	// if localFrontend {
+	// 	uploadURI, err = replaceURLSchemaAndDomain(uploadURI, "http://localhost:3001")
+	// } else if devSettings.DevServerOverride != "" {
+	// 	uploadURI, err = replaceURLSchemaAndDomain(uploadURI, devSettings.DevServerOverride)
+	// }
+
+	// if err != nil {
+	// 	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+	// 		Level:    "error",
+	// 		Message:  fmt.Sprintf("Error during trying to overriding the Dev server URL: %s", err.Error()),
+	// 		LogEvent: "AppixPush",
+	// 	})
+	// 	return err
+	// }
+
+	// log.Println("Frontend upload url:", uploadURI)
+
+	// pollURI, err := appcatalog.UploadToFrontend(uploadURI, zapFile, appName, devSettings.SessionID, args.Verbose)
+
+	// if err != nil {
+	// 	logger.AddMessageToQueue(appixLogger.LoggerNotification{
+	// 		Level:    "error",
+	// 		Message:  fmt.Sprintf("Error during uploading package to the frontend: %s", err.Error()),
+	// 		LogEvent: "AppixPush",
+	// 	})
+	// 	return err
+	// }
+
+	// log.Println("Frontend upload poll uri:", pollURI)
+
+	// appcatalog.PollUntilDone(pollURI, wait, !noBrowser, args.Verbose, openURL)
 
 	if args.Verbose {
 		logger.AddMessageToQueue(appixLogger.LoggerNotification{
