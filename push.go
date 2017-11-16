@@ -1,9 +1,11 @@
 package appix
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"regexp"
 	"time"
 
@@ -58,7 +60,63 @@ func RegisterPush(app *kingpin.Application, config config.Config, args *GlobalAr
 		IntVar(&timeout)
 }
 
+var addr = flag.String("addr", "127.0.0.1:5000", "http service address")
+
 func push(config config.Config, appPath string, noBrowser bool, wait int, timeout int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
+
+	log.Println("Nuno testing")
+
+	/*
+		URL := "ws://127.0.0.1:5000/"
+
+		var dialer *websocket.Dialer
+
+		conn, _, err := dialer.Dial(URL, nil)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println("read:", err)
+			return err
+		}
+
+		fmt.Printf("received: %s\n", message)
+	*/
+
+	/*
+		flag.Parse()
+		log.SetFlags(0)
+
+		interrupt := make(chan os.Signal, 1)
+		signal.Notify(interrupt, os.Interrupt)
+
+		u := url.URL{Scheme: "ws", Host: *addr, Path: "/"}
+		log.Printf("connecting to %s", u.String())
+
+		c, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
+		if err != nil {
+			if err == websocket.ErrBadHandshake {
+				log.Printf("handshake failed with status %d", resp)
+			}
+			log.Fatal("dial:", err)
+		}
+
+		defer c.Close()
+
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				log.Println("read:", err)
+				return err
+			}
+			log.Printf("recv: %s", message)
+		}
+	*/
+	os.Exit(3)
+
 	appPath, appName, _, err := prepareAppUpload(appPath)
 
 	if err != nil {
