@@ -14,6 +14,8 @@ import (
 	"github.com/Travix-International/appix/appixLogger"
 	"github.com/Travix-International/appix/auth"
 	"github.com/Travix-International/appix/config"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -64,57 +66,30 @@ var addr = flag.String("addr", "127.0.0.1:5000", "http service address")
 
 func push(config config.Config, appPath string, noBrowser bool, wait int, timeout int, localFrontend bool, args *GlobalArgs, logger *appixLogger.Logger) error {
 
-	log.Println("Nuno testing")
+	log.Println("Nuno testing start")
 
-	/*
-		URL := "ws://127.0.0.1:5000/"
+	conn, _, err := websocket.DefaultDialer.Dial("ws://localhost:5000/", nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-		var dialer *websocket.Dialer
+	err2 := conn.WriteMessage(websocket.TextMessage, []byte("{\"correlationId\": \"cynu6w7hdr1k\"}"))
+	if err2 != nil {
+		fmt.Println("write:", err)
+		return
+	}
 
-		conn, _, err := dialer.Dial(URL, nil)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
+	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("read:", err)
-			return err
+			return
 		}
-
 		fmt.Printf("received: %s\n", message)
-	*/
-
-	/*
-		flag.Parse()
-		log.SetFlags(0)
-
-		interrupt := make(chan os.Signal, 1)
-		signal.Notify(interrupt, os.Interrupt)
-
-		u := url.URL{Scheme: "ws", Host: *addr, Path: "/"}
-		log.Printf("connecting to %s", u.String())
-
-		c, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
-		if err != nil {
-			if err == websocket.ErrBadHandshake {
-				log.Printf("handshake failed with status %d", resp)
-			}
-			log.Fatal("dial:", err)
-		}
-
-		defer c.Close()
-
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				return err
-			}
-			log.Printf("recv: %s", message)
-		}
-	*/
+	}	
+	
+	log.Println("Nuno testing end")
 	os.Exit(3)
 
 	appPath, appName, _, err := prepareAppUpload(appPath)
