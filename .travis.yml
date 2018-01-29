@@ -2,6 +2,8 @@
 # three environments.
 os: osx
 
+osx_image: xcode8.3
+
 language: go
 
 go:
