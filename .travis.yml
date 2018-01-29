@@ -1,8 +1,6 @@
 # We need an OSX agent. This is a bit slow, but that's the only system that can properly cross-compile appix for all
 # three environments.
-os: osx
-
-osx_image: xcode8.3
+os: linux
 
 language: go
 
