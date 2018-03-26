@@ -105,6 +105,8 @@ Param(
 
 Write-Output "Starting the Appix ADK installation"
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 $appixVersion = $env:APPIX_VERSION
 if ([string]::IsNullOrEmpty($appixVersion)){
   # Determine the latest version
