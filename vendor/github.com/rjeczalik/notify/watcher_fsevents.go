@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license that can be
 // found in the LICENSE file.
 
-// +build darwin,!kqueue
+// +build darwin,!kqueue,cgo
 
 package notify
 
@@ -11,8 +11,6 @@ import (
 	"strings"
 	"sync/atomic"
 )
-
-// TODO(rjeczalik): get rid of calls to canonical, it's tree responsibility
 
 const (
 	failure = uint32(FSEventsMustScanSubDirs | FSEventsUserDropped | FSEventsKernelDropped)
@@ -189,9 +187,6 @@ func newWatcher(c chan<- EventInfo) watcher {
 }
 
 func (fse *fsevents) watch(path string, event Event, isrec int32) (err error) {
-	if path, err = canonical(path); err != nil {
-		return err
-	}
 	if _, ok := fse.watches[path]; ok {
 		return errAlreadyWatched
 	}
@@ -211,9 +206,6 @@ func (fse *fsevents) watch(path string, event Event, isrec int32) (err error) {
 }
 
 func (fse *fsevents) unwatch(path string) (err error) {
-	if path, err = canonical(path); err != nil {
-		return
-	}
 	w, ok := fse.watches[path]
 	if !ok {
 		return errNotWatched
@@ -266,7 +258,7 @@ func (fse *fsevents) RecursiveUnwatch(path string) error {
 	return fse.unwatch(path)
 }
 
-// RecrusiveRewatch implements RecursiveWatcher interface. It fails:
+// RecursiveRewatch implements RecursiveWatcher interface. It fails:
 //
 //   * with errNotWatched when the given path is not being watched
 //   * with errInvalidEventSet when oldevent does not match the current event set
