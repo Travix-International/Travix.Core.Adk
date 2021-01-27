@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license that can be
 // found in the LICENSE file.
 
-// +build solaris
+// +build solaris illumos
 
 package notify
 
@@ -20,16 +20,27 @@ const (
 )
 
 const (
-	FileAccess     = fileAccess
-	FileModified   = fileModified
-	FileAttrib     = fileAttrib
-	FileDelete     = fileDelete
-	FileRenameTo   = fileRenameTo
+	// FileAccess is an event reported when monitored file/directory was accessed.
+	FileAccess = fileAccess
+	// FileModified is an event reported when monitored file/directory was modified.
+	FileModified = fileModified
+	// FileAttrib is an event reported when monitored file/directory's ATTRIB
+	// was changed.
+	FileAttrib = fileAttrib
+	// FileDelete is an event reported when monitored file/directory was deleted.
+	FileDelete = fileDelete
+	// FileRenameTo to is an event reported when monitored file/directory was renamed.
+	FileRenameTo = fileRenameTo
+	// FileRenameFrom is an event reported when monitored file/directory was renamed.
 	FileRenameFrom = fileRenameFrom
-	FileTrunc      = fileTrunc
-	FileNoFollow   = fileNoFollow
-	Unmounted      = unmounted
-	MountedOver    = mountedOver
+	// FileTrunc is an event reported when monitored file/directory was truncated.
+	FileTrunc = fileTrunc
+	// FileNoFollow is an flag to indicate not to follow symbolic links.
+	FileNoFollow = fileNoFollow
+	// Unmounted is an event reported when monitored filesystem was unmounted.
+	Unmounted = unmounted
+	// MountedOver is an event reported when monitored file/directory was mounted on.
+	MountedOver = mountedOver
 )
 
 var osestr = map[Event]string{

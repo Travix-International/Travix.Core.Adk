@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.7.x
+
+script:
+  - 'make run-tests'
+
+notifications:
+  email: false

@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license that can be
 // found in the LICENSE file.
 
-// +build darwin,kqueue dragonfly freebsd netbsd openbsd
+// +build darwin,kqueue darwin,!cgo dragonfly freebsd netbsd openbsd
 
 package notify
 
@@ -36,16 +36,9 @@ type kq struct {
 
 // watched is a data structure representing watched file/directory.
 type watched struct {
-	// p is a path to watched file/directory.
-	p string
+	trgWatched
 	// fd is a file descriptor for watched file/directory.
 	fd int
-	// fi provides information about watched file/dir.
-	fi os.FileInfo
-	// eDir represents events watched directly.
-	eDir Event
-	// eNonDir represents events watched indirectly.
-	eNonDir Event
 }
 
 // Stop implements trigger.
@@ -64,9 +57,18 @@ func (k *kq) Close() error {
 func (*kq) NewWatched(p string, fi os.FileInfo) (*watched, error) {
 	fd, err := syscall.Open(p, syscall.O_NONBLOCK|syscall.O_RDONLY, 0)
 	if err != nil {
+		// BSDs can't open symlinks and return an error if the symlink
+		// cannot be followed - ignore it instead of failing. See e.g.
+		// https://github.com/libinotify-kqueue/libinotify-kqueue/blob/a822c8f1d75404fe3132f695a898dcd42fe8afbc/patches/freebsd11-O_SYMLINK.patch
+		if os.IsNotExist(err) && fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+			return nil, errSkip
+		}
 		return nil, err
 	}
-	return &watched{fd: fd, p: p, fi: fi}, nil
+	return &watched{
+		trgWatched: trgWatched{p: p, fi: fi},
+		fd:         fd,
+	}, nil
 }
 
 // Record implements trigger.
@@ -157,14 +159,15 @@ func (k *kq) IsStop(n interface{}, err error) bool {
 }
 
 func init() {
-	encode = func(e Event) (o int64) {
+	encode = func(e Event, dir bool) (o int64) {
 		// Create event is not supported by kqueue. Instead NoteWrite event will
-		// be registered. If this event will be reported on dir which is to be
-		// monitored for Create, dir will be rescanned and Create events will
-		// be generated and returned for new files. In case of files,
-		// if not requested NoteRename event is reported, it will be ignored.
+		// be registered for a directory. If this event will be reported on dir
+		// which is to be monitored for Create, dir will be rescanned
+		// and Create events will be generated and returned for new files.
+		// In case of files, if not requested NoteRename event is reported,
+		// it will be ignored.
 		o = int64(e &^ Create)
-		if e&Write != 0 {
+		if (e&Create != 0 && dir) || e&Write != 0 {
 			o = (o &^ int64(Write)) | int64(NoteWrite)
 		}
 		if e&Rename != 0 {
