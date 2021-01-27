@@ -56,11 +56,12 @@ $ git clone git@github.com:Travix-International/appix.git $GOPATH/src/github.com
 
 ### Dependencies
 
-Install the dependencies with [gvt](https://github.com/FiloSottile/gvt):
+Install the dependencies with [go mod](https://golang.org/ref/mod):
 
 ```
 $ cd $GOPATH/src/github.com/Travix-International/appix
-$ gvt restore
+$ go mod tidy
+$ go mod vendor
 ```
 
 ### Environment variables
