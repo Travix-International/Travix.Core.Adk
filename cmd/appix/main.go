@@ -39,22 +39,11 @@ var (
 		"staging": "https://appcatalog.staging.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
-	targetEnv        = "prod"
-	verbose          = false
-	localFrontend    = false
 	maxRetryAttempts = 5
 )
 
 func main() {
 	parsedBuildDate, _ = time.Parse("Mon.January.2.2006.15:04:05.-0700.MST", buildDate)
-
-	// Context
-	config := makeConfig()
-
-	// appixLogger
-	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
-	logger.Start()
-	defer logger.Stop()
 
 	args := appix.GlobalArgs{}
 
@@ -65,9 +54,24 @@ func main() {
 		Short('c').
 		Default("prod").
 		EnumVar(&args.TargetEnv, "local", "dev", "staging", "prod")
+	app.Flag("catalog-url", "Specify the catalog URL to use").
+		Short('u').
+		StringVar(&args.CatalogURL)
 	app.Flag("verbose", "Verbose mode.").
 		Short('v').
 		BoolVar(&args.Verbose)
+
+	if args.CatalogURL != "" {
+		catalogURIs[args.TargetEnv] = args.CatalogURL
+	}
+
+	// Context
+	config := makeConfig()
+
+	// appixLogger
+	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
+	logger.Start()
+	defer logger.Stop()
 
 	appix.RegisterInit(app, config, &args)
 	appix.RegisterLogin(app, config, &args)
