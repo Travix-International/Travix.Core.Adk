@@ -21,7 +21,7 @@ deploy:
     - bin/appix.exe
   on:
     repo: Travix-International/appix
-    tags: true # The deployment happens only if the commit has a tag.
+    #tags: true # The deployment happens only if the commit has a tag.
 
 notifications:
   email: false
