@@ -12,7 +12,7 @@ type Config struct {
 	BuildDate       string
 	ParsedBuildDate time.Time
 	GitHash         string
-	CatalogURIs     map[string]string
+	CatalogURL      string
 
 	DirectoryPath string
 	AuthFilePath  string
