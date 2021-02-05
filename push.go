@@ -89,7 +89,7 @@ func push(config config.Config, appPath string, noBrowser bool, wait int, timeou
 
 	log.Printf("Run push for App '%s', path '%s'\n", appName, appPath)
 
-	rootURI := config.CatalogURIs[args.TargetEnv]
+	rootURI := config.CatalogURL
 	pushURI := fmt.Sprintf(pushTemplateURI, rootURI, appName, devSettings.SessionID)
 
 	uploadURI, err := appcatalog.PushToCatalog(pushURI, timeout, appManifestFile, args.Verbose, config, logger)

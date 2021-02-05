@@ -35,8 +35,8 @@ var (
 var (
 	catalogURIs = map[string]string{
 		"local":   "http://localhost:5000",
-		"dev":     "https://appcatalog.development.travix.com",
-		"staging": "https://appcatalog.staging.travix.com",
+		"dev":     "https://appcatalog.dev.travix.com",
+		"staging": "https://appcatalog.stg.travix.com",
 		"prod":    "https://appcatalog.travix.com",
 	}
 	maxRetryAttempts = 5
@@ -61,12 +61,12 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 
-	if args.CatalogURL != "" {
-		catalogURIs[args.TargetEnv] = args.CatalogURL
+	if args.CatalogURL == "" {
+		args.CatalogURL = catalogURIs[args.TargetEnv]
 	}
 
 	// Context
-	config := makeConfig()
+	config := makeConfig(args.CatalogURL)
 
 	// appixLogger
 	logger := appixLogger.NewAppixLogger(config.TravixLoggerUrl)
@@ -84,7 +84,7 @@ func main() {
 	app.Parse(os.Args[1:])
 }
 
-func makeConfig() config.Config {
+func makeConfig(catalogUrl string) config.Config {
 	user, userErr := user.Current()
 	if userErr != nil {
 		log.Fatal(userErr)
@@ -97,7 +97,7 @@ func makeConfig() config.Config {
 		BuildDate:       buildDate,
 		ParsedBuildDate: parsedBuildDate,
 		GitHash:         gitHash,
-		CatalogURIs:     catalogURIs,
+		CatalogURL:      catalogUrl,
 
 		DirectoryPath: directoryPath,
 		AuthFilePath:  filepath.Join(directoryPath, "auth.json"),
