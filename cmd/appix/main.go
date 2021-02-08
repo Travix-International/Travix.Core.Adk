@@ -61,6 +61,8 @@ func main() {
 		Short('v').
 		BoolVar(&args.Verbose)
 
+	app.Parse(os.Args[1:])
+
 	if args.CatalogURL == "" {
 		args.CatalogURL = catalogURIs[args.TargetEnv]
 	}
